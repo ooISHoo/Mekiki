@@ -1,0 +1,39 @@
+[package]
+name = "mekiki-capture"
+description = "OS ネイティブ API による画面キャプチャ抽象"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+log = { workspace = true }
+# 4K の輝度変換は 800 万画素の走査になる。単スレッドだと 15ms かかり、
+# 探索全体の 3 割近くを占めていた（docs/maintenance/performance-decisions.md）。
+rayon = { workspace = true }
+
+[target.'cfg(windows)'.dependencies.windows]
+workspace = true
+features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Dwm",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Graphics_Gdi",
+    # ウィンドウの所有プロセスから実行ファイル名を引く
+    "Win32_Storage_FileSystem",
+    "Win32_System_Threading",
+    "Win32_UI_HiDpi",
+    # IsWindowEnabled — モーダルダイアログの検出（activate が黙って成功しないため）
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+]
+
+[dev-dependencies]
+image = { workspace = true }
+env_logger = { workspace = true }

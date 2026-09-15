@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  lint:
+    name: fmt + clippy
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      # IDE は Tauri アプリなので、フロントエンドの成果物が無いとビルドできない
+      # （tauri-build が frontendDist の存在を確かめる）。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ide/package-lock.json
+      - run: npm ci
+        working-directory: ide
+      - run: npm run build
+        working-directory: ide
+      - run: cargo run -p mekiki-api-gen -- --check
+      - run: cargo fmt --all -- --check
+      # custom-protocol を付けるのは、これが無いと IDE が dev モード扱いになり
+      # 開発サーバを前提にしたビルドになるため。
+      - run: cargo clippy --workspace --all-targets --features mekiki-ide/custom-protocol -- -D warnings
+
+  test:
+    name: test (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ide/package-lock.json
+      - run: npm ci
+        working-directory: ide
+      - run: npm run build
+        working-directory: ide
+      # テストは release で回す。CPU 参照実装が debug だと桁違いに遅く、
+      # ゴールデン 8 ケースを回しきれない。
+      #
+      # MEKIKI_REQUIRE_GPU は立てない。GitHub の Windows ランナーには GPU が無く、
+      # GPU 経路は下の portability ジョブ（lavapipe）で検証する。
+      - run: cargo test --workspace --release --features mekiki-ide/custom-protocol
+
+  # Linux は「対象プラットフォーム」ではない。設計の健全性を測る道具として回す。
+  #
+  #   1. OS 依存コードが capture / input の内側に収まっているか
+  #      （漏れていればここでビルドが壊れる）
+  #   2. GPU シェーダの退行検出。GPU の無いランナーでも lavapipe で実際に走らせる
+  #
+  # 詳細は開発計画書 §6。
+  portability:
+    name: 非 Windows ビルド + GPU シェーダ検証
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install lavapipe (software Vulkan)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            mesa-vulkan-drivers libvulkan1 vulkan-tools
+          vulkaninfo --summary || true
+
+      # OS 依存が上位レイヤへ漏れていないことを確かめる。
+      # IDE（Tauri）は Linux で追加の系依存ライブラリを要求するので、対象から外す。
+      # 見たいのはコアの移植性であって、GUI の移植性ではない。
+      - run: cargo build --release -p mekiki-matching -p mekiki-capture -p mekiki-input -p mekiki-overlay -p mekiki-core -p mekiki-scripting
+
+      # lavapipe があるので GPU 経路の skip を許さない。
+      - name: マッチングのゴールデンテスト（GPU 経路込み）
+        run: cargo test -p mekiki-matching --release
+        env:
+          MEKIKI_REQUIRE_GPU: "1"
+          WGPU_BACKEND: vulkan
+
+      - name: プラットフォーム非依存クレートのテスト
+        run: cargo test -p mekiki-core -p mekiki-capture -p mekiki-input --release
+
+  goldens:
+    name: ゴールデンが OpenCV と一致しているか
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r tools/golden/requirements.txt
+      # フィクスチャを再生成せず、コミット済みの期待値を OpenCV で検算する。
+      # 「手で書き換えたゴールデンでテストを通す」事故を防ぐのが目的。
+      - run: python tools/golden/gen_golden.py --check

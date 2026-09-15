@@ -1,0 +1,2225 @@
+{
+  "generated": "Generated from api/rhai-api.toml by `cargo run -p mekiki-api-gen`. DO NOT EDIT.",
+  "schemaVersion": 1,
+  "apiVersion": "0.0.1",
+  "globals": [
+    "click",
+    "clipboard",
+    "expect",
+    "expect_window",
+    "find",
+    "find_all",
+    "middle_click",
+    "mouse_move",
+    "mouse_x",
+    "mouse_y",
+    "press",
+    "region",
+    "right_click",
+    "screen",
+    "screen_count",
+    "scroll",
+    "set_auto_wait",
+    "set_click_hold",
+    "set_clipboard",
+    "set_double_click_interval",
+    "set_move_settle",
+    "set_move_speed",
+    "set_recheck",
+    "set_similarity",
+    "set_timeout",
+    "set_type_chunk",
+    "set_type_interval",
+    "sleep",
+    "target",
+    "type_text",
+    "window",
+    "window_exists",
+    "window_titles"
+  ],
+  "members": {
+    "Expect": [
+      "to_appear",
+      "to_have_count",
+      "to_have_count_at_least",
+      "to_have_count_at_most",
+      "to_vanish"
+    ],
+    "Match": [
+      "center_x",
+      "center_y",
+      "click",
+      "double_click",
+      "height",
+      "highlight",
+      "hover",
+      "middle_click",
+      "region",
+      "right_click",
+      "score",
+      "to_debug",
+      "to_string",
+      "width",
+      "x",
+      "y"
+    ],
+    "Region": [
+      "above",
+      "activate",
+      "below",
+      "expect",
+      "find",
+      "find_all",
+      "grow",
+      "height",
+      "left",
+      "list_ui",
+      "offset",
+      "press",
+      "read_text",
+      "read_value",
+      "right",
+      "save",
+      "target",
+      "to_debug",
+      "to_string",
+      "type_text",
+      "width",
+      "x",
+      "y"
+    ],
+    "Target": [
+      "above",
+      "below",
+      "best",
+      "click",
+      "double_click",
+      "drag_to",
+      "exists",
+      "expect",
+      "first",
+      "force",
+      "highlight",
+      "hover",
+      "in_region",
+      "last",
+      "left_of",
+      "middle_click",
+      "near",
+      "nth",
+      "offset",
+      "or",
+      "press",
+      "recheck",
+      "resolve",
+      "right_click",
+      "right_of",
+      "scroll",
+      "similar",
+      "timeout",
+      "to_debug",
+      "to_string",
+      "type_text",
+      "wait_vanish"
+    ],
+    "WindowExpect": [
+      "to_appear",
+      "to_vanish"
+    ]
+  },
+  "types": [
+    {
+      "id": "region",
+      "name": "Region",
+      "summary": "A rectangular search scope.",
+      "details": "A region returned by `window` or `WindowExpect.to_appear` retains a window handle for activation and scoped keyboard input. Geometry methods return plain regions and discard that handle."
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "summary": "An immutable, lazy description of a search and action point.",
+      "details": "Builder methods return configured copies. Search modifiers require image, OCR, or UI matching; geometric locators reject pattern-only operations."
+    },
+    {
+      "id": "match",
+      "name": "Match",
+      "summary": "A resolved coordinate snapshot.",
+      "details": "Actions on a Match use stored coordinates without rechecking. Prefer Target actions when the screen may have changed."
+    },
+    {
+      "id": "expect",
+      "name": "Expect",
+      "summary": "A retrying assertion for a Target.",
+      "details": "A failed condition is a runtime error. Non-positive timeout arguments select the target or global default."
+    },
+    {
+      "id": "window_expect",
+      "name": "WindowExpect",
+      "summary": "A retrying assertion for a window query.",
+      "details": "It retries at the global scan interval. Capture errors other than a missing window fail immediately."
+    }
+  ],
+  "items": [
+    {
+      "id": "global.screen.primary",
+      "owner": "",
+      "name": "screen",
+      "kind": "function",
+      "params": [],
+      "returns": "Region",
+      "summary": "Return the primary display.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.screen.index",
+      "owner": "",
+      "name": "screen",
+      "kind": "function",
+      "params": [
+        {
+          "name": "index",
+          "type": "int",
+          "description": "Zero-based display index."
+        }
+      ],
+      "returns": "Region",
+      "summary": "Return a display by index.",
+      "details": "",
+      "constraints": [
+        "Negative indices are treated as zero."
+      ],
+      "errors": [
+        "Fails when the display is unavailable."
+      ],
+      "examples": []
+    },
+    {
+      "id": "global.screen_count",
+      "owner": "",
+      "name": "screen_count",
+      "kind": "function",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the number of displays.",
+      "details": "Valid indices for `screen` are `0` to `screen_count() - 1`.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.region",
+      "owner": "",
+      "name": "region",
+      "kind": "function",
+      "params": [
+        {
+          "name": "x",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "y",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "width",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "height",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Region",
+      "summary": "Create a rectangular search scope.",
+      "details": "",
+      "constraints": [
+        "Width and height must be positive."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.window",
+      "owner": "",
+      "name": "window",
+      "kind": "function",
+      "params": [
+        {
+          "name": "spec",
+          "type": "string",
+          "description": "Title substring or structured window specification."
+        }
+      ],
+      "returns": "Region",
+      "summary": "Resolve the frontmost visible matching window immediately.",
+      "details": "",
+      "constraints": [],
+      "errors": [
+        "Fails when no window matches or capture fails."
+      ],
+      "examples": []
+    },
+    {
+      "id": "global.window_titles",
+      "owner": "",
+      "name": "window_titles",
+      "kind": "function",
+      "params": [],
+      "returns": "array<string>",
+      "summary": "Return visible window titles in front-to-back order.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.window_exists",
+      "owner": "",
+      "name": "window_exists",
+      "kind": "function",
+      "params": [
+        {
+          "name": "spec",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "bool",
+      "summary": "Check once whether a visible window matches.",
+      "details": "A missing window returns false; other capture failures remain errors.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.expect_window",
+      "owner": "",
+      "name": "expect_window",
+      "kind": "function",
+      "params": [
+        {
+          "name": "spec",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "WindowExpect",
+      "summary": "Create a retrying window assertion.",
+      "details": "Use this for application startup instead of polling `window` with sleeps.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.target",
+      "owner": "",
+      "name": "target",
+      "kind": "function",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Create a lazy target scoped to the primary display.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.find",
+      "owner": "",
+      "name": "find",
+      "kind": "function",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "Match",
+      "summary": "Resolve one match on the primary display and return it.",
+      "details": "Shorthand for `target(locator).resolve()`: it waits like an action and fails after the effective timeout.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.find_all",
+      "owner": "",
+      "name": "find_all",
+      "kind": "function",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "array<Match>",
+      "summary": "Resolve all matches on the primary display.",
+      "details": "A miss returns an empty array after the effective target timeout.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.expect.locator",
+      "owner": "",
+      "name": "expect",
+      "kind": "function",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "Expect",
+      "summary": "Create an assertion scoped to the primary display.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.expect.target",
+      "owner": "",
+      "name": "expect",
+      "kind": "function",
+      "params": [
+        {
+          "name": "target",
+          "type": "Target",
+          "description": ""
+        }
+      ],
+      "returns": "Expect",
+      "summary": "Create an assertion from an already configured target.",
+      "details": "Target modifiers such as `similar` and `timeout` are preserved.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.mouse_x",
+      "owner": "",
+      "name": "mouse_x",
+      "kind": "function",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the current pointer x coordinate.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.mouse_y",
+      "owner": "",
+      "name": "mouse_y",
+      "kind": "function",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the current pointer y coordinate.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.mouse_move",
+      "owner": "",
+      "name": "mouse_move",
+      "kind": "function",
+      "params": [
+        {
+          "name": "dx",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "dy",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Move relative to the pointer without searching or activating a window.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.click",
+      "owner": "",
+      "name": "click",
+      "kind": "function",
+      "params": [],
+      "returns": "unit",
+      "summary": "Left-click at the current pointer position.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.right_click",
+      "owner": "",
+      "name": "right_click",
+      "kind": "function",
+      "params": [],
+      "returns": "unit",
+      "summary": "Right-click at the current pointer position.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.middle_click",
+      "owner": "",
+      "name": "middle_click",
+      "kind": "function",
+      "params": [],
+      "returns": "unit",
+      "summary": "Middle-click at the current pointer position.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.type_text",
+      "owner": "",
+      "name": "type_text",
+      "kind": "function",
+      "params": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Type Unicode text into the current keyboard focus.",
+      "details": "",
+      "constraints": [
+        "Does not identify or activate a window.",
+        "Line breaks and tabs are sent as Enter and Tab."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.press",
+      "owner": "",
+      "name": "press",
+      "kind": "function",
+      "params": [
+        {
+          "name": "keys",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Press a key or modifier combination in the current focus.",
+      "details": "",
+      "constraints": [
+        "Does not identify or activate a window.",
+        "Use Unicode text input for layout-independent text."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.scroll",
+      "owner": "",
+      "name": "scroll",
+      "kind": "function",
+      "params": [
+        {
+          "name": "horizontal",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "vertical",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Scroll at the current pointer position.",
+      "details": "Positive values move right and up; negative values move left and down.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.sleep",
+      "owner": "",
+      "name": "sleep",
+      "kind": "function",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Pause for an interruptible duration.",
+      "details": "Negative values become zero and paused time does not consume the duration. Prefer an assertion when waiting for visible state.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.clipboard",
+      "owner": "",
+      "name": "clipboard",
+      "kind": "function",
+      "params": [],
+      "returns": "string",
+      "summary": "Return the clipboard text.",
+      "details": "An empty or non-text clipboard returns an empty string.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_clipboard",
+      "owner": "",
+      "name": "set_clipboard",
+      "kind": "function",
+      "params": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Replace the clipboard contents with text.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_similarity",
+      "owner": "",
+      "name": "set_similarity",
+      "kind": "function",
+      "params": [
+        {
+          "name": "value",
+          "type": "float",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Set the default match threshold for subsequently constructed needles.",
+      "details": "Cached image patterns retain their previous threshold. Use `Target.similar` when the threshold must be explicit.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_timeout",
+      "owner": "",
+      "name": "set_timeout",
+      "kind": "function",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Set the default action and assertion timeout.",
+      "details": "Targets without a `timeout` override read this value when an operation runs, including targets created earlier. Negative values become zero.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_auto_wait",
+      "owner": "",
+      "name": "set_auto_wait",
+      "kind": "function",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "bool",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Enable or disable the stability check before actions.",
+      "details": "This does not disable waiting for a target to appear.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_recheck",
+      "owner": "",
+      "name": "set_recheck",
+      "kind": "function",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "bool",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Control whether actions search again immediately before acting.",
+      "details": "When disabled, a click immediately after `hover` may reuse that hit. Consumed hits are discarded. A target override takes precedence. Disable it for applications that draw their own cursor (games, remote-desktop viewers): after `hover` the drawn cursor covers the target, and the recheck before `click` then fails to find it. See the guide on software cursors.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_type_chunk",
+      "owner": "",
+      "name": "set_type_chunk",
+      "kind": "function",
+      "params": [
+        {
+          "name": "characters",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Set the number of Unicode characters sent per input call.",
+      "details": "Zero sends each text segment in one call. Negative values become zero.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_type_interval",
+      "owner": "",
+      "name": "set_type_interval",
+      "kind": "function",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Set the delay before every text input chunk.",
+      "details": "Negative values become zero. Reducing this delay may cause some applications to drop input.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_click_hold",
+      "owner": "",
+      "name": "set_click_hold",
+      "kind": "function",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Set how long a mouse button stays pressed during a click.",
+      "details": "Applies to clicks, double clicks and drags. Defaults to 20. At 0, some applications drop the click; raise it for applications that require a longer press. Negative values become zero.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_double_click_interval",
+      "owner": "",
+      "name": "set_double_click_interval",
+      "kind": "function",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Set the interval between the first and second click of a double click.",
+      "details": "Defaults to 60. It must stay shorter than the OS double-click time (500ms by default) or the clicks are treated as two singles. Negative values become zero.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_move_settle",
+      "owner": "",
+      "name": "set_move_settle",
+      "kind": "function",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Set the wait between moving the pointer and pressing a button.",
+      "details": "Defaults to 30. Gives applications time to react to the pointer arriving, such as hover states. Negative values become zero.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_move_speed.int",
+      "owner": "",
+      "name": "set_move_speed",
+      "kind": "function",
+      "params": [
+        {
+          "name": "pixels_per_second",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Set pointer movement speed using an integer.",
+      "details": "Zero moves immediately. Negative values become zero. Ordinary Windows applications accept `0`. Applications that draw their own cursor sample the pointer at their frame rate; if a fast move is read late and the click lands off target, lower the speed. See the guide on software cursors.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "global.set_move_speed.float",
+      "owner": "",
+      "name": "set_move_speed",
+      "kind": "function",
+      "params": [
+        {
+          "name": "pixels_per_second",
+          "type": "float",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Set pointer movement speed using a float.",
+      "details": "Zero moves immediately. Negative values become zero.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.x",
+      "owner": "Region",
+      "name": "x",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the rectangle's left coordinate.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.y",
+      "owner": "Region",
+      "name": "y",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the rectangle's top coordinate.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.width",
+      "owner": "Region",
+      "name": "width",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the rectangle width.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.height",
+      "owner": "Region",
+      "name": "height",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the rectangle height.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.target",
+      "owner": "Region",
+      "name": "target",
+      "kind": "method",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Create a lazy target scoped to this region.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.find",
+      "owner": "Region",
+      "name": "find",
+      "kind": "method",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "Match",
+      "summary": "Resolve one match in this region and return it.",
+      "details": "Shorthand for `target(locator).resolve()` on this region: it waits like an action and fails after the effective timeout.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.find_all",
+      "owner": "Region",
+      "name": "find_all",
+      "kind": "method",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "array<Match>",
+      "summary": "Resolve all matches in this region.",
+      "details": "A miss returns an empty array after the effective target timeout.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.expect",
+      "owner": "Region",
+      "name": "expect",
+      "kind": "method",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "Expect",
+      "summary": "Create an assertion scoped to this region.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.activate",
+      "owner": "Region",
+      "name": "activate",
+      "kind": "method",
+      "params": [],
+      "returns": "unit",
+      "summary": "Bring the associated window to the foreground.",
+      "details": "",
+      "constraints": [
+        "Only works on a region returned directly by a window lookup.",
+        "Does not restore a minimized window."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.press",
+      "owner": "Region",
+      "name": "press",
+      "kind": "method",
+      "params": [
+        {
+          "name": "keys",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Activate the associated window and press a key combination.",
+      "details": "",
+      "constraints": [
+        "Only works on a region returned directly by a window lookup."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.type_text",
+      "owner": "Region",
+      "name": "type_text",
+      "kind": "method",
+      "params": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Activate the associated window and type into its current focus.",
+      "details": "The method does not click before typing.",
+      "constraints": [
+        "Only works on a region returned directly by a window lookup."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.read_text",
+      "owner": "Region",
+      "name": "read_text",
+      "kind": "method",
+      "params": [],
+      "returns": "array<string>",
+      "summary": "Read the visible text in this region via OCR.",
+      "details": "Returns one string per recognized line, in reading order. To click something that was read, hand the text back as an `ocr:` target instead of aiming at line coordinates. An area below the OCR minimum yields an empty array.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.list_ui",
+      "owner": "Region",
+      "name": "list_ui",
+      "kind": "method",
+      "params": [],
+      "returns": "array<string>",
+      "summary": "List accessibility elements as ready-made `ui:` locator strings.",
+      "details": "Each entry combines the element's non-empty name, automation id, and control type, escaped for direct use with `target(...)`. Needs no screen capture, so it works where pixel-based search does not.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.list_ui.typed",
+      "owner": "Region",
+      "name": "list_ui",
+      "kind": "method",
+      "params": [
+        {
+          "name": "control_type",
+          "type": "string",
+          "description": "Restrict to one control type (`button`, `edit`, ...)."
+        }
+      ],
+      "returns": "array<string>",
+      "summary": "List accessibility elements of one control type as `ui:` locator strings.",
+      "details": "",
+      "constraints": [],
+      "errors": [
+        "An unknown control type is an error rather than an empty list."
+      ],
+      "examples": []
+    },
+    {
+      "id": "region.read_value",
+      "owner": "Region",
+      "name": "read_value",
+      "kind": "method",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": "A constrained `ui:` locator."
+        }
+      ],
+      "returns": "string",
+      "summary": "Read the value of exactly one accessibility element.",
+      "details": "The counterpart of typing: reads an edit box or similar control via UI Automation, without OCR.",
+      "constraints": [],
+      "errors": [
+        "An ambiguous or unconstrained locator is an error.",
+        "A password field is an error; its value is never returned.",
+        "An element with no readable value is an error."
+      ],
+      "examples": []
+    },
+    {
+      "id": "region.save",
+      "owner": "Region",
+      "name": "save",
+      "kind": "method",
+      "params": [
+        {
+          "name": "path",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Capture this region and save it as a PNG.",
+      "details": "For evidence and debugging. A relative path resolves against the process working directory.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.grow",
+      "owner": "Region",
+      "name": "grow",
+      "kind": "method",
+      "params": [
+        {
+          "name": "pixels",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Region",
+      "summary": "Expand every side, or shrink for a negative value.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.offset",
+      "owner": "Region",
+      "name": "offset",
+      "kind": "method",
+      "params": [
+        {
+          "name": "dx",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "dy",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Region",
+      "summary": "Translate the rectangle.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.above",
+      "owner": "Region",
+      "name": "above",
+      "kind": "method",
+      "params": [
+        {
+          "name": "height",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Region",
+      "summary": "Return an adjacent rectangle above this region.",
+      "details": "",
+      "constraints": [
+        "Negative dimensions become zero."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.below",
+      "owner": "Region",
+      "name": "below",
+      "kind": "method",
+      "params": [
+        {
+          "name": "height",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Region",
+      "summary": "Return an adjacent rectangle below this region.",
+      "details": "",
+      "constraints": [
+        "Negative dimensions become zero."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.left",
+      "owner": "Region",
+      "name": "left",
+      "kind": "method",
+      "params": [
+        {
+          "name": "width",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Region",
+      "summary": "Return an adjacent rectangle left of this region.",
+      "details": "",
+      "constraints": [
+        "Negative dimensions become zero."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.right",
+      "owner": "Region",
+      "name": "right",
+      "kind": "method",
+      "params": [
+        {
+          "name": "width",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Region",
+      "summary": "Return an adjacent rectangle right of this region.",
+      "details": "",
+      "constraints": [
+        "Negative dimensions become zero."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.to_string",
+      "owner": "Region",
+      "name": "to_string",
+      "kind": "method",
+      "params": [],
+      "returns": "string",
+      "summary": "Return a diagnostic representation.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "region.to_debug",
+      "owner": "Region",
+      "name": "to_debug",
+      "kind": "method",
+      "params": [],
+      "returns": "string",
+      "summary": "Return a diagnostic representation for Rhai debugging.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.similar",
+      "owner": "Target",
+      "name": "similar",
+      "kind": "method",
+      "params": [
+        {
+          "name": "value",
+          "type": "float",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Override the primary needle's match threshold.",
+      "details": "",
+      "constraints": [
+        "Requires an image, OCR, or UI locator."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.offset",
+      "owner": "Target",
+      "name": "offset",
+      "kind": "method",
+      "params": [
+        {
+          "name": "dx",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "dy",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Offset the action point from the matched rectangle's center.",
+      "details": "",
+      "constraints": [
+        "Requires an image, OCR, or UI locator."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.timeout",
+      "owner": "Target",
+      "name": "timeout",
+      "kind": "method",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Override this target's wait timeout.",
+      "details": "",
+      "constraints": [
+        "Negative values become zero.",
+        "Requires an image, OCR, or UI locator."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.force",
+      "owner": "Target",
+      "name": "force",
+      "kind": "method",
+      "params": [],
+      "returns": "Target",
+      "summary": "Skip stability checking while still waiting for appearance.",
+      "details": "",
+      "constraints": [
+        "Requires an image, OCR, or UI locator."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.recheck",
+      "owner": "Target",
+      "name": "recheck",
+      "kind": "method",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "bool",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Override action rechecking for this target.",
+      "details": "Takes precedence over `set_recheck`. Use `recheck(true)` to keep the pre-action search for one target while the script runs with `set_recheck(false)` for an application that draws its own cursor (see the guide on software cursors).",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.in_region",
+      "owner": "Target",
+      "name": "in_region",
+      "kind": "method",
+      "params": [
+        {
+          "name": "region",
+          "type": "Region",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Replace the target's search scope.",
+      "details": "",
+      "constraints": [
+        "Requires an image, OCR, or UI locator."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.or",
+      "owner": "Target",
+      "name": "or",
+      "kind": "method",
+      "params": [
+        {
+          "name": "locator",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Try an alternative needle when the primary needle is absent.",
+      "details": "The alternative uses the same scope and must be an image, OCR, or UI locator. Alternatives are tried in declaration order.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.nth",
+      "owner": "Target",
+      "name": "nth",
+      "kind": "method",
+      "params": [
+        {
+          "name": "index",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Select a zero-based match in reading order.",
+      "details": "",
+      "constraints": [
+        "Negative indices become zero.",
+        "Requires an image, OCR, or UI locator."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.first",
+      "owner": "Target",
+      "name": "first",
+      "kind": "method",
+      "params": [],
+      "returns": "Target",
+      "summary": "Select the first match in reading order.",
+      "details": "Sugar for `nth(0)`; the behavior is identical.",
+      "constraints": [
+        "Requires an image, OCR, or UI locator."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.last",
+      "owner": "Target",
+      "name": "last",
+      "kind": "method",
+      "params": [],
+      "returns": "Target",
+      "summary": "Select the last match in reading order.",
+      "details": "",
+      "constraints": [
+        "Requires an image, OCR, or UI locator."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.best",
+      "owner": "Target",
+      "name": "best",
+      "kind": "method",
+      "params": [],
+      "returns": "Target",
+      "summary": "Select the highest-scoring match.",
+      "details": "",
+      "constraints": [
+        "Requires an image, OCR, or UI locator."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.right_of",
+      "owner": "Target",
+      "name": "right_of",
+      "kind": "method",
+      "params": [
+        {
+          "name": "anchor",
+          "type": "string",
+          "description": ""
+        },
+        {
+          "name": "distance",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Restrict matches to the right of an image or OCR anchor.",
+      "details": "Candidates must overlap the anchor vertically and remain within the maximum edge-to-edge distance.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.left_of",
+      "owner": "Target",
+      "name": "left_of",
+      "kind": "method",
+      "params": [
+        {
+          "name": "anchor",
+          "type": "string",
+          "description": ""
+        },
+        {
+          "name": "distance",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Restrict matches to the left of an image or OCR anchor.",
+      "details": "Candidates must overlap the anchor vertically and remain within the maximum edge-to-edge distance.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.above",
+      "owner": "Target",
+      "name": "above",
+      "kind": "method",
+      "params": [
+        {
+          "name": "anchor",
+          "type": "string",
+          "description": ""
+        },
+        {
+          "name": "distance",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Restrict matches to above an image or OCR anchor.",
+      "details": "Candidates must overlap the anchor horizontally and remain within the maximum edge-to-edge distance.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.below",
+      "owner": "Target",
+      "name": "below",
+      "kind": "method",
+      "params": [
+        {
+          "name": "anchor",
+          "type": "string",
+          "description": ""
+        },
+        {
+          "name": "distance",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Restrict matches to below an image or OCR anchor.",
+      "details": "Candidates must overlap the anchor horizontally and remain within the maximum edge-to-edge distance.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.near",
+      "owner": "Target",
+      "name": "near",
+      "kind": "method",
+      "params": [
+        {
+          "name": "anchor",
+          "type": "string",
+          "description": ""
+        },
+        {
+          "name": "distance",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Target",
+      "summary": "Restrict matches to a center-distance from an image or OCR anchor.",
+      "details": "",
+      "constraints": [
+        "Negative distances become zero.",
+        "UI locators cannot be anchors."
+      ],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.click",
+      "owner": "Target",
+      "name": "click",
+      "kind": "method",
+      "params": [],
+      "returns": "Match",
+      "summary": "Resolve, wait, move, and left-click the action point.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.right_click",
+      "owner": "Target",
+      "name": "right_click",
+      "kind": "method",
+      "params": [],
+      "returns": "Match",
+      "summary": "Resolve, wait, move, and right-click the action point.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.double_click",
+      "owner": "Target",
+      "name": "double_click",
+      "kind": "method",
+      "params": [],
+      "returns": "Match",
+      "summary": "Resolve, wait, move, and double-click the action point.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.middle_click",
+      "owner": "Target",
+      "name": "middle_click",
+      "kind": "method",
+      "params": [],
+      "returns": "Match",
+      "summary": "Resolve, wait, move, and middle-click the action point.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.hover",
+      "owner": "Target",
+      "name": "hover",
+      "kind": "method",
+      "params": [],
+      "returns": "Match",
+      "summary": "Resolve, wait, and move to the action point without clicking.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.type_text",
+      "owner": "Target",
+      "name": "type_text",
+      "kind": "method",
+      "params": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "Match",
+      "summary": "Resolve, click, and type Unicode text.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.press",
+      "owner": "Target",
+      "name": "press",
+      "kind": "method",
+      "params": [
+        {
+          "name": "keys",
+          "type": "string",
+          "description": ""
+        }
+      ],
+      "returns": "Match",
+      "summary": "Resolve, move to the target, and press a key combination.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.scroll",
+      "owner": "Target",
+      "name": "scroll",
+      "kind": "method",
+      "params": [
+        {
+          "name": "horizontal",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "vertical",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Match",
+      "summary": "Resolve, move to the target, and scroll.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.drag_to",
+      "owner": "Target",
+      "name": "drag_to",
+      "kind": "method",
+      "params": [
+        {
+          "name": "destination",
+          "type": "Target",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Resolve both endpoints, then drag this target to the destination.",
+      "details": "Both searches complete before the mouse button is pressed.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.resolve",
+      "owner": "Target",
+      "name": "resolve",
+      "kind": "method",
+      "params": [],
+      "returns": "Match",
+      "summary": "Search now and return a coordinate snapshot.",
+      "details": "This always searches again regardless of the recheck setting.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.exists",
+      "owner": "Target",
+      "name": "exists",
+      "kind": "method",
+      "params": [],
+      "returns": "bool",
+      "summary": "Check once without waiting.",
+      "details": "Geometric locators always return true. Absence returns false; other failures remain errors.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.wait_vanish",
+      "owner": "Target",
+      "name": "wait_vanish",
+      "kind": "method",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "bool",
+      "summary": "Wait for the target to disappear, returning false on timeout.",
+      "details": "A non-positive duration uses the target or global default.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.highlight",
+      "owner": "Target",
+      "name": "highlight",
+      "kind": "method",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Match",
+      "summary": "Resolve and display the matched rectangle for a duration.",
+      "details": "The call blocks while highlighted. Negative durations become zero.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.expect",
+      "owner": "Target",
+      "name": "expect",
+      "kind": "method",
+      "params": [],
+      "returns": "Expect",
+      "summary": "Create an assertion preserving this target's modifiers.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.to_string",
+      "owner": "Target",
+      "name": "to_string",
+      "kind": "method",
+      "params": [],
+      "returns": "string",
+      "summary": "Return a diagnostic representation.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "target.to_debug",
+      "owner": "Target",
+      "name": "to_debug",
+      "kind": "method",
+      "params": [],
+      "returns": "string",
+      "summary": "Return a diagnostic representation for Rhai debugging.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.x",
+      "owner": "Match",
+      "name": "x",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the stored rectangle's left coordinate.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.y",
+      "owner": "Match",
+      "name": "y",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the stored rectangle's top coordinate.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.width",
+      "owner": "Match",
+      "name": "width",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the stored rectangle width.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.height",
+      "owner": "Match",
+      "name": "height",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the stored rectangle height.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.center_x",
+      "owner": "Match",
+      "name": "center_x",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the stored rectangle's center x coordinate.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.center_y",
+      "owner": "Match",
+      "name": "center_y",
+      "kind": "property",
+      "params": [],
+      "returns": "int",
+      "summary": "Return the stored rectangle's center y coordinate.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.score",
+      "owner": "Match",
+      "name": "score",
+      "kind": "property",
+      "params": [],
+      "returns": "float",
+      "summary": "Return the similarity score.",
+      "details": "Direct geometric locators produce 1.0.",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.click",
+      "owner": "Match",
+      "name": "click",
+      "kind": "method",
+      "params": [],
+      "returns": "unit",
+      "summary": "Left-click the stored action point without searching again.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.right_click",
+      "owner": "Match",
+      "name": "right_click",
+      "kind": "method",
+      "params": [],
+      "returns": "unit",
+      "summary": "Right-click the stored action point without searching again.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.double_click",
+      "owner": "Match",
+      "name": "double_click",
+      "kind": "method",
+      "params": [],
+      "returns": "unit",
+      "summary": "Double-click the stored action point without searching again.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.middle_click",
+      "owner": "Match",
+      "name": "middle_click",
+      "kind": "method",
+      "params": [],
+      "returns": "unit",
+      "summary": "Middle-click the stored action point without searching again.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.hover",
+      "owner": "Match",
+      "name": "hover",
+      "kind": "method",
+      "params": [],
+      "returns": "unit",
+      "summary": "Move to the stored action point without searching again.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.highlight",
+      "owner": "Match",
+      "name": "highlight",
+      "kind": "method",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Display the stored rectangle for a duration.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.region",
+      "owner": "Match",
+      "name": "region",
+      "kind": "method",
+      "params": [],
+      "returns": "Region",
+      "summary": "Convert the stored rectangle into a plain search scope.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.to_string",
+      "owner": "Match",
+      "name": "to_string",
+      "kind": "method",
+      "params": [],
+      "returns": "string",
+      "summary": "Return a diagnostic representation.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "match.to_debug",
+      "owner": "Match",
+      "name": "to_debug",
+      "kind": "method",
+      "params": [],
+      "returns": "string",
+      "summary": "Return a diagnostic representation for Rhai debugging.",
+      "details": "",
+      "constraints": [],
+      "errors": [],
+      "examples": []
+    },
+    {
+      "id": "expect.to_appear",
+      "owner": "Expect",
+      "name": "to_appear",
+      "kind": "method",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Match",
+      "summary": "Require at least one match and return it.",
+      "details": "",
+      "constraints": [],
+      "errors": [
+        "A timeout is a runtime error."
+      ],
+      "examples": []
+    },
+    {
+      "id": "expect.to_vanish",
+      "owner": "Expect",
+      "name": "to_vanish",
+      "kind": "method",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Require all matches to disappear.",
+      "details": "",
+      "constraints": [],
+      "errors": [
+        "A timeout is a runtime error."
+      ],
+      "examples": []
+    },
+    {
+      "id": "expect.to_have_count",
+      "owner": "Expect",
+      "name": "to_have_count",
+      "kind": "method",
+      "params": [
+        {
+          "name": "count",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "array<Match>",
+      "summary": "Require exactly a count of matches and return them.",
+      "details": "",
+      "constraints": [
+        "Negative counts become zero."
+      ],
+      "errors": [
+        "A timeout is a runtime error."
+      ],
+      "examples": []
+    },
+    {
+      "id": "expect.to_have_count_at_least",
+      "owner": "Expect",
+      "name": "to_have_count_at_least",
+      "kind": "method",
+      "params": [
+        {
+          "name": "count",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "array<Match>",
+      "summary": "Require at least a count of matches and return all current matches.",
+      "details": "",
+      "constraints": [
+        "Negative counts become zero."
+      ],
+      "errors": [
+        "A timeout is a runtime error."
+      ],
+      "examples": []
+    },
+    {
+      "id": "expect.to_have_count_at_most",
+      "owner": "Expect",
+      "name": "to_have_count_at_most",
+      "kind": "method",
+      "params": [
+        {
+          "name": "count",
+          "type": "int",
+          "description": ""
+        },
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "array<Match>",
+      "summary": "Require at most a count of matches and return all current matches.",
+      "details": "",
+      "constraints": [
+        "Negative counts become zero."
+      ],
+      "errors": [
+        "A timeout is a runtime error."
+      ],
+      "examples": []
+    },
+    {
+      "id": "window_expect.to_appear",
+      "owner": "WindowExpect",
+      "name": "to_appear",
+      "kind": "method",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "Region",
+      "summary": "Wait for the window and return a window-backed region.",
+      "details": "",
+      "constraints": [],
+      "errors": [
+        "A timeout is a runtime error."
+      ],
+      "examples": []
+    },
+    {
+      "id": "window_expect.to_vanish",
+      "owner": "WindowExpect",
+      "name": "to_vanish",
+      "kind": "method",
+      "params": [
+        {
+          "name": "ms",
+          "type": "int",
+          "description": ""
+        }
+      ],
+      "returns": "unit",
+      "summary": "Wait until no window matches.",
+      "details": "",
+      "constraints": [],
+      "errors": [
+        "A timeout is a runtime error."
+      ],
+      "examples": []
+    }
+  ]
+}

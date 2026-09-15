@@ -1,0 +1,21 @@
+{
+  "bundle": {
+    "externalBin": [
+      "binaries/mekiki-mcp"
+    ],
+    "resources": {
+      "../../AGENTS.md": "AGENTS.md",
+      "../../LICENSE": "LICENSE",
+      "../../docs/mcp-start.md": "docs/mcp-start.md",
+      "../../docs/mcp-reference.md": "docs/mcp-reference.md",
+      "../../examples/": "examples/"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "both",
+        "languages": ["English", "Japanese"],
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}

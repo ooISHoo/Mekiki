@@ -1,0 +1,23 @@
+[package]
+name = "mekiki-core"
+description = "Screen/Region/Pattern/Match モデルと探索戦略"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+mekiki-matching = { workspace = true }
+mekiki-capture = { workspace = true }
+mekiki-input = { workspace = true }
+mekiki-overlay = { workspace = true }
+mekiki-ocr = { workspace = true }
+mekiki-uia = { workspace = true }
+image = { workspace = true }
+log = { workspace = true }
+
+[dev-dependencies]
+env_logger = { workspace = true }
+image = { workspace = true }

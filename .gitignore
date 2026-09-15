@@ -1,0 +1,33 @@
+/target
+**/*.rs.bk
+Cargo.lock.bak
+
+# ベンチ結果（生成物）
+/bench-results/
+
+# 失敗時の診断アーティファクト（生成物）
+/mekiki-artifacts/
+
+# Python (ゴールデン生成ツール)
+__pycache__/
+*.pyc
+/tools/golden/.venv/
+
+# IDE のフロントエンド（生成物・依存）
+/ide/node_modules/
+/ide/dist/
+/ide/src-tauri/gen/
+/ide/src-tauri/binaries/*.exe
+/dist/installer/
+
+# 画像アセットの保管庫は例では生成物扱い
+/examples/**/.mekiki/
+
+# エディタ
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# 個人のユーザーテスト（実アプリのキャプチャを含む。公開しない）
+/usertest/

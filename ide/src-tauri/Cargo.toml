@@ -1,0 +1,47 @@
+[package]
+name = "mekiki-ide"
+description = "Tauri-based IDE for Mekiki"
+# The engine uses workspace.package.version. The IDE product version comes from
+# tauri.conf.json, as recommended by Tauri; keep this crate version in sync.
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+name = "mekiki_ide_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[features]
+default = []
+# **Do not remove.** Tauri uses this feature to distinguish development and
+# production builds. Without it, a release build still loads devUrl from
+# tauri.conf.json and fails with ERR_CONNECTION_REFUSED when Vite is not running.
+# `cargo tauri build` enables it automatically; plain `cargo build` does not.
+custom-protocol = ["tauri/custom-protocol"]
+
+[build-dependencies]
+tauri-build = { workspace = true }
+
+[dependencies]
+# Link the core engine directly (design plan phase 3-1). A separate process and
+# IPC would add round-trip cost to operations such as live match preview.
+mekiki-core = { workspace = true }
+# Step execution and line highlighting require Rhai debugger support. Its
+# runtime cost is documented in docs/architecture/ide.md.
+mekiki-scripting = { workspace = true, features = ["debugging"] }
+
+tauri = { workspace = true }
+# OS-level shortcut that stops a script even when the IDE is not focused. This
+# emergency control must work outside the IDE when automation captures input.
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-dialog = "2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+image = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+arboard = { workspace = true }
+base64 = { workspace = true }

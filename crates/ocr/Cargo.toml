@@ -1,0 +1,26 @@
+[package]
+name = "mekiki-ocr"
+description = "OS 標準 API による画面文字認識"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+log = { workspace = true }
+
+[dev-dependencies]
+mekiki-capture = { workspace = true }
+
+[target.'cfg(windows)'.dependencies.windows]
+workspace = true
+features = [
+    "Foundation",
+    "Foundation_Collections",
+    "Globalization",
+    "Graphics_Imaging",
+    "Media_Ocr",
+    "Storage_Streams",
+]

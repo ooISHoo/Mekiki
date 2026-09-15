@@ -1,0 +1,34 @@
+[package]
+name = "mekiki-scripting"
+description = "Rhai API registration and script execution for Mekiki"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+# Enables Rhai's volatile debugger API for stepping and line highlighting.
+# Keep it opt-in because it adds a hook to every statement and expression.
+debugging = ["rhai/debugging"]
+
+[dependencies]
+mekiki-core = { workspace = true }
+rhai = { workspace = true }
+sha2 = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+image = { workspace = true }
+
+[dev-dependencies]
+mekiki-capture = { workspace = true }
+mekiki-input = { workspace = true }
+rhai = { workspace = true, features = ["metadata"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[[bin]]
+name = "mekiki"
+path = "src/bin/mekiki.rs"

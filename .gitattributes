@@ -1,0 +1,14 @@
+# Normalize line endings: LF in the repository and in working copies.
+# Windows contributors have core.autocrlf=true; without this file the CI
+# (Linux) and rustfmt would see a different byte stream from the local one.
+* text=auto eol=lf
+
+# Batch files must stay CRLF: cmd.exe misparses some LF-only batch files.
+*.bat text eol=crlf
+
+# Binary assets
+*.png binary
+*.ico binary
+*.icns binary
+*.afdesign binary
+*.f32 binary

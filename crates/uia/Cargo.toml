@@ -1,0 +1,29 @@
+[package]
+name = "mekiki-uia"
+description = "アクセシビリティ API による UI 要素の探索"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+log = { workspace = true }
+
+[target.'cfg(windows)'.dependencies.windows]
+workspace = true
+features = [
+    "Win32_Foundation",
+    "Win32_System_Com",
+    # VARIANT は Com と Ole の両方が要る（種別での絞り込み条件に使う）
+    "Win32_System_Ole",
+    "Win32_System_Variant",
+    "Win32_UI_Accessibility",
+    # ウィンドウ列挙は UIA ではなく Win32 で行う（速度のため。windows_uia.rs 冒頭を参照）
+    "Win32_Graphics_Dwm",
+    "Win32_UI_WindowsAndMessaging",
+]
+
+[dev-dependencies]
+env_logger = { workspace = true }

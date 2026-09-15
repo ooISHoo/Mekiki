@@ -1,0 +1,1230 @@
+# CANONICAL RHAI API CONTRACT
+#
+# This is the only hand-maintained source for public Rhai API names, signatures,
+# descriptions, constraints, errors, and examples. Do not edit generated API
+# Markdown or JSON. See api/README.md.
+
+schema_version = 1
+api_version = "0.0.1"
+title = "Mekiki Rhai API"
+introduction = """
+This is the complete scripting contract registered by `ScriptHost`. The API is
+dynamic and therefore its functions do not appear as ordinary Rust functions.
+Coordinates are physical pixels in the Windows virtual desktop, durations are
+milliseconds, and operation failures stop evaluation with a Rhai runtime error
+unless a return value explicitly represents absence or timeout.
+"""
+
+[[guides]]
+title = "Execution model"
+body = """
+A `Target` is a lazy description: construction does not capture the screen.
+Actions resolve it, wait for it to appear, and normally wait for the matched
+pixels to become stable. A `Match` is a coordinate snapshot and does not follow
+later screen changes.
+
+Prefer a window scope and an assertion over global input and fixed delays:
+
+```rhai
+let win = expect_window("exe=notepad.exe").to_appear(10_000);
+win.target("ui:name=Save,type=button").click();
+expect(win.target("ocr:Saved")).to_appear(5_000);
+```
+"""
+
+[[guides]]
+title = "Waiting for UI"
+body = """
+Waiting for a UI part to appear is an assertion. `expect(t).to_appear(ms)`
+retries at the global scan interval (`333` ms) and returns the `Match`, so the
+result can be acted on without searching again:
+
+```rhai
+let m = expect(win.target("save.png")).to_appear(10_000);
+m.click();
+```
+
+Every retry is a full search, so a long wait at the built-in interval keeps the
+CPU or GPU busy. For waits measured in minutes, poll at your own pace:
+`exists` looks exactly once, and `sleep` is interruptible.
+
+```rhai
+let t = win.target("save.png");
+let waited = 0;
+while !t.exists() {
+    if waited >= 600_000 { throw "not found"; }
+    sleep(2_000);
+    waited += 2_000;
+}
+t.click();
+```
+
+A `ui:` locator queries UI Automation instead of matching pixels and makes
+either form cheap. Scoping to a window or region shrinks the searched area.
+"""
+
+[[guides]]
+title = "Locator strings"
+body = '''
+`image:path.png` and an unprefixed path use template matching.
+`image:sha256:<hex>` addresses the asset store. `ocr:text` matches recognized
+screen text. `ui:Save` matches an accessibility name, while the long form accepts
+`name`, `id`, and `type`. Supported UI types are `button`, `checkbox`,
+`combobox`, `edit`, `hyperlink`, `image`, `list`, `listitem`, `menuitem`,
+`radiobutton`, `tab`, `tabitem`, `text`, `tree`, `treeitem`, and `window`;
+`input`, `textbox`, `link`, `label`, `radio`, and `dropdown` are accepted
+aliases, and any other type is an error.
+
+Geometric locators are `point:x,y`, `offset:dx,dy`, and
+`region:x,y,width,height`. `window:title` selects the frontmost title substring.
+The structured window form accepts `title`, `title_exact`, `exe`, `class`, `pid`,
+and zero-based `index`, combined with AND. `title` supports `*` and `?` wildcards;
+`class` is a prefix match. Escape a comma in a value as `\,` and a backslash as
+`\\`. Prefer `exe` for ordinary desktop applications. Store/UWP applications
+may share a host executable and should use a title condition.
+
+Locator prefixes are a reserved namespace. Two or more lowercase ASCII letters
+before a `:` are always read as a prefix, and an unknown prefix is an error,
+never an image path — so future locator kinds cannot change the meaning of an
+existing script. `sha256:` is additionally reserved for content-addressed image
+references. A Windows drive letter is a single character and is therefore
+never mistaken for a prefix.
+'''
+
+[[guides]]
+title = "Input and key names"
+body = """
+Global input does not identify or activate a window. Prefer window or target
+methods. Key combinations join modifiers and one final key with `+`. Modifiers
+are `ctrl`/`control`, `shift`, `alt`, and `win`/`meta`/`cmd`. Named keys include
+Enter, Tab, Escape, Space, Backspace, Delete, Insert, Home, End, Page Up/Down,
+arrows, F1-F24, Caps Lock, Print Screen, letters, digits, punctuation, and numeric
+keypad names. Printable keys depend on keyboard layout; use Unicode text input
+for text. Line breaks and tabs in typed text are emitted as Enter and Tab.
+"""
+
+[[guides]]
+title = "Applications with a software cursor"
+body = """
+Some applications — games, remote-desktop viewers, some canvas-style tools —
+hide the system pointer and draw their own cursor into their frame. Two
+defaults that are right for ordinary windows work against them.
+
+**Rechecking.** Every action searches for its target again immediately before
+acting, so a click lands where the target is now, not where it was. `hover`
+moves the pointer onto the target, the application then draws its cursor
+there, and the recheck before `click` no longer sees the template. The
+symptom is a "not found" error for something plainly on screen, usually right
+after a hover or a click on the same spot. Disable rechecking for the script
+and re-enable it per target where the screen really may move:
+
+```rhai
+set_recheck(false);
+let ok = win.target("ok.png");
+ok.hover();
+ok.click();                                   // reuses the hover hit
+win.target("ocr:Next").recheck(true).click(); // this one searches again
+```
+
+`resolve` always searches regardless of the setting.
+
+**Pointer speed.** Such applications read the pointer position at their own
+frame rate. A pointer moved faster than they sample it can be read late, and
+the click lands where the cursor was drawn, not where it was moved. Tune
+`set_move_speed` while watching the application; ordinary Windows applications
+accept `0` (immediate).
+
+**Injected input may be refused.** Anti-cheat and some kiosk software reject
+synthetic mouse and keyboard input entirely, with no error reported to the
+script. Verify with a short script that the application accepts injected input
+before automating it.
+"""
+
+[[guides]]
+title = "Defaults and settings"
+body = """
+Defaults are similarity `0.7`, timeout `3000`, scan interval `333`, stability
+checking enabled, action rechecking enabled, typing one character every `30` ms,
+and pointer speed `1200` pixels per second. Similarity is copied when OCR and UI
+targets are constructed and when an image is first cached. Timeout, stability,
+recheck, typing, and movement settings are read when an operation runs unless a
+target-level override applies.
+
+Settings are write-only: there are no getter functions. A script that needs to
+restore a value must remember what it set.
+"""
+
+[[guides]]
+title = "Script output"
+body = """
+Rhai's built-in `print(value)` and `debug(value)` are available. Their output
+is collected by the host and shown in the IDE run log; they do not touch the
+screen or the automation state.
+"""
+
+[[types]]
+id = "region"
+name = "Region"
+summary = "A rectangular search scope."
+details = "A region returned by `window` or `WindowExpect.to_appear` retains a window handle for activation and scoped keyboard input. Geometry methods return plain regions and discard that handle."
+
+[[types]]
+id = "target"
+name = "Target"
+summary = "An immutable, lazy description of a search and action point."
+details = "Builder methods return configured copies. Search modifiers require image, OCR, or UI matching; geometric locators reject pattern-only operations."
+
+[[types]]
+id = "match"
+name = "Match"
+summary = "A resolved coordinate snapshot."
+details = "Actions on a Match use stored coordinates without rechecking. Prefer Target actions when the screen may have changed."
+
+[[types]]
+id = "expect"
+name = "Expect"
+summary = "A retrying assertion for a Target."
+details = "A failed condition is a runtime error. Non-positive timeout arguments select the target or global default."
+
+[[types]]
+id = "window_expect"
+name = "WindowExpect"
+summary = "A retrying assertion for a window query."
+details = "It retries at the global scan interval. Capture errors other than a missing window fail immediately."
+
+# Global functions
+
+[[items]]
+id = "global.screen.primary"
+name = "screen"
+kind = "function"
+returns = "Region"
+summary = "Return the primary display."
+
+[[items]]
+id = "global.screen.index"
+name = "screen"
+kind = "function"
+params = [{ name = "index", type = "int", description = "Zero-based display index." }]
+returns = "Region"
+summary = "Return a display by index."
+constraints = ["Negative indices are treated as zero."]
+errors = ["Fails when the display is unavailable."]
+
+[[items]]
+id = "global.screen_count"
+name = "screen_count"
+kind = "function"
+returns = "int"
+summary = "Return the number of displays."
+details = "Valid indices for `screen` are `0` to `screen_count() - 1`."
+
+[[items]]
+id = "global.region"
+name = "region"
+kind = "function"
+params = [{ name = "x", type = "int" }, { name = "y", type = "int" }, { name = "width", type = "int" }, { name = "height", type = "int" }]
+returns = "Region"
+summary = "Create a rectangular search scope."
+constraints = ["Width and height must be positive."]
+
+[[items]]
+id = "global.window"
+name = "window"
+kind = "function"
+params = [{ name = "spec", type = "string", description = "Title substring or structured window specification." }]
+returns = "Region"
+summary = "Resolve the frontmost visible matching window immediately."
+errors = ["Fails when no window matches or capture fails."]
+
+[[items]]
+id = "global.window_titles"
+name = "window_titles"
+kind = "function"
+returns = "array<string>"
+summary = "Return visible window titles in front-to-back order."
+
+[[items]]
+id = "global.window_exists"
+name = "window_exists"
+kind = "function"
+params = [{ name = "spec", type = "string" }]
+returns = "bool"
+summary = "Check once whether a visible window matches."
+details = "A missing window returns false; other capture failures remain errors."
+
+[[items]]
+id = "global.expect_window"
+name = "expect_window"
+kind = "function"
+params = [{ name = "spec", type = "string" }]
+returns = "WindowExpect"
+summary = "Create a retrying window assertion."
+details = "Use this for application startup instead of polling `window` with sleeps."
+
+[[items]]
+id = "global.target"
+name = "target"
+kind = "function"
+params = [{ name = "locator", type = "string" }]
+returns = "Target"
+summary = "Create a lazy target scoped to the primary display."
+
+[[items]]
+id = "global.find"
+name = "find"
+kind = "function"
+params = [{ name = "locator", type = "string" }]
+returns = "Match"
+summary = "Resolve one match on the primary display and return it."
+details = "Shorthand for `target(locator).resolve()`: it waits like an action and fails after the effective timeout."
+
+[[items]]
+id = "global.find_all"
+name = "find_all"
+kind = "function"
+params = [{ name = "locator", type = "string" }]
+returns = "array<Match>"
+summary = "Resolve all matches on the primary display."
+details = "A miss returns an empty array after the effective target timeout."
+
+[[items]]
+id = "global.expect.locator"
+name = "expect"
+kind = "function"
+params = [{ name = "locator", type = "string" }]
+returns = "Expect"
+summary = "Create an assertion scoped to the primary display."
+
+[[items]]
+id = "global.expect.target"
+name = "expect"
+kind = "function"
+params = [{ name = "target", type = "Target" }]
+returns = "Expect"
+summary = "Create an assertion from an already configured target."
+details = "Target modifiers such as `similar` and `timeout` are preserved."
+
+[[items]]
+id = "global.mouse_x"
+name = "mouse_x"
+kind = "function"
+returns = "int"
+summary = "Return the current pointer x coordinate."
+
+[[items]]
+id = "global.mouse_y"
+name = "mouse_y"
+kind = "function"
+returns = "int"
+summary = "Return the current pointer y coordinate."
+
+[[items]]
+id = "global.mouse_move"
+name = "mouse_move"
+kind = "function"
+params = [{ name = "dx", type = "int" }, { name = "dy", type = "int" }]
+returns = "unit"
+summary = "Move relative to the pointer without searching or activating a window."
+
+[[items]]
+id = "global.click"
+name = "click"
+kind = "function"
+returns = "unit"
+summary = "Left-click at the current pointer position."
+
+[[items]]
+id = "global.right_click"
+name = "right_click"
+kind = "function"
+returns = "unit"
+summary = "Right-click at the current pointer position."
+
+[[items]]
+id = "global.middle_click"
+name = "middle_click"
+kind = "function"
+returns = "unit"
+summary = "Middle-click at the current pointer position."
+
+[[items]]
+id = "global.type_text"
+name = "type_text"
+kind = "function"
+params = [{ name = "text", type = "string" }]
+returns = "unit"
+summary = "Type Unicode text into the current keyboard focus."
+constraints = ["Does not identify or activate a window.", "Line breaks and tabs are sent as Enter and Tab."]
+
+[[items]]
+id = "global.press"
+name = "press"
+kind = "function"
+params = [{ name = "keys", type = "string" }]
+returns = "unit"
+summary = "Press a key or modifier combination in the current focus."
+constraints = ["Does not identify or activate a window.", "Use Unicode text input for layout-independent text."]
+
+[[items]]
+id = "global.scroll"
+name = "scroll"
+kind = "function"
+params = [{ name = "horizontal", type = "int" }, { name = "vertical", type = "int" }]
+returns = "unit"
+summary = "Scroll at the current pointer position."
+details = "Positive values move right and up; negative values move left and down."
+
+[[items]]
+id = "global.sleep"
+name = "sleep"
+kind = "function"
+params = [{ name = "ms", type = "int" }]
+returns = "unit"
+summary = "Pause for an interruptible duration."
+details = "Negative values become zero and paused time does not consume the duration. Prefer an assertion when waiting for visible state."
+
+[[items]]
+id = "global.clipboard"
+name = "clipboard"
+kind = "function"
+returns = "string"
+summary = "Return the clipboard text."
+details = "An empty or non-text clipboard returns an empty string."
+
+[[items]]
+id = "global.set_clipboard"
+name = "set_clipboard"
+kind = "function"
+params = [{ name = "text", type = "string" }]
+returns = "unit"
+summary = "Replace the clipboard contents with text."
+
+[[items]]
+id = "global.set_similarity"
+name = "set_similarity"
+kind = "function"
+params = [{ name = "value", type = "float" }]
+returns = "unit"
+summary = "Set the default match threshold for subsequently constructed needles."
+details = "Cached image patterns retain their previous threshold. Use `Target.similar` when the threshold must be explicit."
+
+[[items]]
+id = "global.set_timeout"
+name = "set_timeout"
+kind = "function"
+params = [{ name = "ms", type = "int" }]
+returns = "unit"
+summary = "Set the default action and assertion timeout."
+details = "Targets without a `timeout` override read this value when an operation runs, including targets created earlier. Negative values become zero."
+
+[[items]]
+id = "global.set_auto_wait"
+name = "set_auto_wait"
+kind = "function"
+params = [{ name = "enabled", type = "bool" }]
+returns = "unit"
+summary = "Enable or disable the stability check before actions."
+details = "This does not disable waiting for a target to appear."
+
+[[items]]
+id = "global.set_recheck"
+name = "set_recheck"
+kind = "function"
+params = [{ name = "enabled", type = "bool" }]
+returns = "unit"
+summary = "Control whether actions search again immediately before acting."
+details = "When disabled, a click immediately after `hover` may reuse that hit. Consumed hits are discarded. A target override takes precedence. Disable it for applications that draw their own cursor (games, remote-desktop viewers): after `hover` the drawn cursor covers the target, and the recheck before `click` then fails to find it. See the guide on software cursors."
+
+[[items]]
+id = "global.set_type_chunk"
+name = "set_type_chunk"
+kind = "function"
+params = [{ name = "characters", type = "int" }]
+returns = "unit"
+summary = "Set the number of Unicode characters sent per input call."
+details = "Zero sends each text segment in one call. Negative values become zero."
+
+[[items]]
+id = "global.set_type_interval"
+name = "set_type_interval"
+kind = "function"
+params = [{ name = "ms", type = "int" }]
+returns = "unit"
+summary = "Set the delay before every text input chunk."
+details = "Negative values become zero. Reducing this delay may cause some applications to drop input."
+
+[[items]]
+id = "global.set_click_hold"
+name = "set_click_hold"
+kind = "function"
+params = [{ name = "ms", type = "int" }]
+returns = "unit"
+summary = "Set how long a mouse button stays pressed during a click."
+details = "Applies to clicks, double clicks and drags. Defaults to 20. At 0, some applications drop the click; raise it for applications that require a longer press. Negative values become zero."
+
+[[items]]
+id = "global.set_double_click_interval"
+name = "set_double_click_interval"
+kind = "function"
+params = [{ name = "ms", type = "int" }]
+returns = "unit"
+summary = "Set the interval between the first and second click of a double click."
+details = "Defaults to 60. It must stay shorter than the OS double-click time (500ms by default) or the clicks are treated as two singles. Negative values become zero."
+
+[[items]]
+id = "global.set_move_settle"
+name = "set_move_settle"
+kind = "function"
+params = [{ name = "ms", type = "int" }]
+returns = "unit"
+summary = "Set the wait between moving the pointer and pressing a button."
+details = "Defaults to 30. Gives applications time to react to the pointer arriving, such as hover states. Negative values become zero."
+
+[[items]]
+id = "global.set_move_speed.int"
+name = "set_move_speed"
+kind = "function"
+params = [{ name = "pixels_per_second", type = "int" }]
+returns = "unit"
+summary = "Set pointer movement speed using an integer."
+details = "Zero moves immediately. Negative values become zero. Ordinary Windows applications accept `0`. Applications that draw their own cursor sample the pointer at their frame rate; if a fast move is read late and the click lands off target, lower the speed. See the guide on software cursors."
+
+[[items]]
+id = "global.set_move_speed.float"
+name = "set_move_speed"
+kind = "function"
+params = [{ name = "pixels_per_second", type = "float" }]
+returns = "unit"
+summary = "Set pointer movement speed using a float."
+details = "Zero moves immediately. Negative values become zero."
+
+# Region
+
+[[items]]
+id = "region.x"
+owner = "Region"
+name = "x"
+kind = "property"
+returns = "int"
+summary = "Return the rectangle's left coordinate."
+
+[[items]]
+id = "region.y"
+owner = "Region"
+name = "y"
+kind = "property"
+returns = "int"
+summary = "Return the rectangle's top coordinate."
+
+[[items]]
+id = "region.width"
+owner = "Region"
+name = "width"
+kind = "property"
+returns = "int"
+summary = "Return the rectangle width."
+
+[[items]]
+id = "region.height"
+owner = "Region"
+name = "height"
+kind = "property"
+returns = "int"
+summary = "Return the rectangle height."
+
+[[items]]
+id = "region.target"
+owner = "Region"
+name = "target"
+kind = "method"
+params = [{ name = "locator", type = "string" }]
+returns = "Target"
+summary = "Create a lazy target scoped to this region."
+
+[[items]]
+id = "region.find"
+owner = "Region"
+name = "find"
+kind = "method"
+params = [{ name = "locator", type = "string" }]
+returns = "Match"
+summary = "Resolve one match in this region and return it."
+details = "Shorthand for `target(locator).resolve()` on this region: it waits like an action and fails after the effective timeout."
+
+[[items]]
+id = "region.find_all"
+owner = "Region"
+name = "find_all"
+kind = "method"
+params = [{ name = "locator", type = "string" }]
+returns = "array<Match>"
+summary = "Resolve all matches in this region."
+details = "A miss returns an empty array after the effective target timeout."
+
+[[items]]
+id = "region.expect"
+owner = "Region"
+name = "expect"
+kind = "method"
+params = [{ name = "locator", type = "string" }]
+returns = "Expect"
+summary = "Create an assertion scoped to this region."
+
+[[items]]
+id = "region.activate"
+owner = "Region"
+name = "activate"
+kind = "method"
+returns = "unit"
+summary = "Bring the associated window to the foreground."
+constraints = ["Only works on a region returned directly by a window lookup.", "Does not restore a minimized window."]
+
+[[items]]
+id = "region.press"
+owner = "Region"
+name = "press"
+kind = "method"
+params = [{ name = "keys", type = "string" }]
+returns = "unit"
+summary = "Activate the associated window and press a key combination."
+constraints = ["Only works on a region returned directly by a window lookup."]
+
+[[items]]
+id = "region.type_text"
+owner = "Region"
+name = "type_text"
+kind = "method"
+params = [{ name = "text", type = "string" }]
+returns = "unit"
+summary = "Activate the associated window and type into its current focus."
+details = "The method does not click before typing."
+constraints = ["Only works on a region returned directly by a window lookup."]
+
+[[items]]
+id = "region.read_text"
+owner = "Region"
+name = "read_text"
+kind = "method"
+returns = "array<string>"
+summary = "Read the visible text in this region via OCR."
+details = "Returns one string per recognized line, in reading order. To click something that was read, hand the text back as an `ocr:` target instead of aiming at line coordinates. An area below the OCR minimum yields an empty array."
+
+[[items]]
+id = "region.list_ui"
+owner = "Region"
+name = "list_ui"
+kind = "method"
+returns = "array<string>"
+summary = "List accessibility elements as ready-made `ui:` locator strings."
+details = "Each entry combines the element's non-empty name, automation id, and control type, escaped for direct use with `target(...)`. Needs no screen capture, so it works where pixel-based search does not."
+
+[[items]]
+id = "region.list_ui.typed"
+owner = "Region"
+name = "list_ui"
+kind = "method"
+params = [{ name = "control_type", type = "string", description = "Restrict to one control type (`button`, `edit`, ...)." }]
+returns = "array<string>"
+summary = "List accessibility elements of one control type as `ui:` locator strings."
+errors = ["An unknown control type is an error rather than an empty list."]
+
+[[items]]
+id = "region.read_value"
+owner = "Region"
+name = "read_value"
+kind = "method"
+params = [{ name = "locator", type = "string", description = "A constrained `ui:` locator." }]
+returns = "string"
+summary = "Read the value of exactly one accessibility element."
+details = "The counterpart of typing: reads an edit box or similar control via UI Automation, without OCR."
+errors = ["An ambiguous or unconstrained locator is an error.", "A password field is an error; its value is never returned.", "An element with no readable value is an error."]
+
+[[items]]
+id = "region.save"
+owner = "Region"
+name = "save"
+kind = "method"
+params = [{ name = "path", type = "string" }]
+returns = "unit"
+summary = "Capture this region and save it as a PNG."
+details = "For evidence and debugging. A relative path resolves against the process working directory."
+
+[[items]]
+id = "region.grow"
+owner = "Region"
+name = "grow"
+kind = "method"
+params = [{ name = "pixels", type = "int" }]
+returns = "Region"
+summary = "Expand every side, or shrink for a negative value."
+
+[[items]]
+id = "region.offset"
+owner = "Region"
+name = "offset"
+kind = "method"
+params = [{ name = "dx", type = "int" }, { name = "dy", type = "int" }]
+returns = "Region"
+summary = "Translate the rectangle."
+
+[[items]]
+id = "region.above"
+owner = "Region"
+name = "above"
+kind = "method"
+params = [{ name = "height", type = "int" }]
+returns = "Region"
+summary = "Return an adjacent rectangle above this region."
+constraints = ["Negative dimensions become zero."]
+
+[[items]]
+id = "region.below"
+owner = "Region"
+name = "below"
+kind = "method"
+params = [{ name = "height", type = "int" }]
+returns = "Region"
+summary = "Return an adjacent rectangle below this region."
+constraints = ["Negative dimensions become zero."]
+
+[[items]]
+id = "region.left"
+owner = "Region"
+name = "left"
+kind = "method"
+params = [{ name = "width", type = "int" }]
+returns = "Region"
+summary = "Return an adjacent rectangle left of this region."
+constraints = ["Negative dimensions become zero."]
+
+[[items]]
+id = "region.right"
+owner = "Region"
+name = "right"
+kind = "method"
+params = [{ name = "width", type = "int" }]
+returns = "Region"
+summary = "Return an adjacent rectangle right of this region."
+constraints = ["Negative dimensions become zero."]
+
+[[items]]
+id = "region.to_string"
+owner = "Region"
+name = "to_string"
+kind = "method"
+returns = "string"
+summary = "Return a diagnostic representation."
+
+[[items]]
+id = "region.to_debug"
+owner = "Region"
+name = "to_debug"
+kind = "method"
+returns = "string"
+summary = "Return a diagnostic representation for Rhai debugging."
+
+# Target builders and actions
+
+[[items]]
+id = "target.similar"
+owner = "Target"
+name = "similar"
+kind = "method"
+params = [{ name = "value", type = "float" }]
+returns = "Target"
+summary = "Override the primary needle's match threshold."
+constraints = ["Requires an image, OCR, or UI locator."]
+
+[[items]]
+id = "target.offset"
+owner = "Target"
+name = "offset"
+kind = "method"
+params = [{ name = "dx", type = "int" }, { name = "dy", type = "int" }]
+returns = "Target"
+summary = "Offset the action point from the matched rectangle's center."
+constraints = ["Requires an image, OCR, or UI locator."]
+
+[[items]]
+id = "target.timeout"
+owner = "Target"
+name = "timeout"
+kind = "method"
+params = [{ name = "ms", type = "int" }]
+returns = "Target"
+summary = "Override this target's wait timeout."
+constraints = ["Negative values become zero.", "Requires an image, OCR, or UI locator."]
+
+[[items]]
+id = "target.force"
+owner = "Target"
+name = "force"
+kind = "method"
+returns = "Target"
+summary = "Skip stability checking while still waiting for appearance."
+constraints = ["Requires an image, OCR, or UI locator."]
+
+[[items]]
+id = "target.recheck"
+owner = "Target"
+name = "recheck"
+kind = "method"
+params = [{ name = "enabled", type = "bool" }]
+returns = "Target"
+summary = "Override action rechecking for this target."
+details = "Takes precedence over `set_recheck`. Use `recheck(true)` to keep the pre-action search for one target while the script runs with `set_recheck(false)` for an application that draws its own cursor (see the guide on software cursors)."
+
+[[items]]
+id = "target.in_region"
+owner = "Target"
+name = "in_region"
+kind = "method"
+params = [{ name = "region", type = "Region" }]
+returns = "Target"
+summary = "Replace the target's search scope."
+constraints = ["Requires an image, OCR, or UI locator."]
+
+[[items]]
+id = "target.or"
+owner = "Target"
+name = "or"
+kind = "method"
+params = [{ name = "locator", type = "string" }]
+returns = "Target"
+summary = "Try an alternative needle when the primary needle is absent."
+details = "The alternative uses the same scope and must be an image, OCR, or UI locator. Alternatives are tried in declaration order."
+
+[[items]]
+id = "target.nth"
+owner = "Target"
+name = "nth"
+kind = "method"
+params = [{ name = "index", type = "int" }]
+returns = "Target"
+summary = "Select a zero-based match in reading order."
+constraints = ["Negative indices become zero.", "Requires an image, OCR, or UI locator."]
+
+[[items]]
+id = "target.first"
+owner = "Target"
+name = "first"
+kind = "method"
+returns = "Target"
+summary = "Select the first match in reading order."
+details = "Sugar for `nth(0)`; the behavior is identical."
+constraints = ["Requires an image, OCR, or UI locator."]
+
+[[items]]
+id = "target.last"
+owner = "Target"
+name = "last"
+kind = "method"
+returns = "Target"
+summary = "Select the last match in reading order."
+constraints = ["Requires an image, OCR, or UI locator."]
+
+[[items]]
+id = "target.best"
+owner = "Target"
+name = "best"
+kind = "method"
+returns = "Target"
+summary = "Select the highest-scoring match."
+constraints = ["Requires an image, OCR, or UI locator."]
+
+[[items]]
+id = "target.right_of"
+owner = "Target"
+name = "right_of"
+kind = "method"
+params = [{ name = "anchor", type = "string" }, { name = "distance", type = "int" }]
+returns = "Target"
+summary = "Restrict matches to the right of an image or OCR anchor."
+details = "Candidates must overlap the anchor vertically and remain within the maximum edge-to-edge distance."
+
+[[items]]
+id = "target.left_of"
+owner = "Target"
+name = "left_of"
+kind = "method"
+params = [{ name = "anchor", type = "string" }, { name = "distance", type = "int" }]
+returns = "Target"
+summary = "Restrict matches to the left of an image or OCR anchor."
+details = "Candidates must overlap the anchor vertically and remain within the maximum edge-to-edge distance."
+
+[[items]]
+id = "target.above"
+owner = "Target"
+name = "above"
+kind = "method"
+params = [{ name = "anchor", type = "string" }, { name = "distance", type = "int" }]
+returns = "Target"
+summary = "Restrict matches to above an image or OCR anchor."
+details = "Candidates must overlap the anchor horizontally and remain within the maximum edge-to-edge distance."
+
+[[items]]
+id = "target.below"
+owner = "Target"
+name = "below"
+kind = "method"
+params = [{ name = "anchor", type = "string" }, { name = "distance", type = "int" }]
+returns = "Target"
+summary = "Restrict matches to below an image or OCR anchor."
+details = "Candidates must overlap the anchor horizontally and remain within the maximum edge-to-edge distance."
+
+[[items]]
+id = "target.near"
+owner = "Target"
+name = "near"
+kind = "method"
+params = [{ name = "anchor", type = "string" }, { name = "distance", type = "int" }]
+returns = "Target"
+summary = "Restrict matches to a center-distance from an image or OCR anchor."
+constraints = ["Negative distances become zero.", "UI locators cannot be anchors."]
+
+[[items]]
+id = "target.click"
+owner = "Target"
+name = "click"
+kind = "method"
+returns = "Match"
+summary = "Resolve, wait, move, and left-click the action point."
+
+[[items]]
+id = "target.right_click"
+owner = "Target"
+name = "right_click"
+kind = "method"
+returns = "Match"
+summary = "Resolve, wait, move, and right-click the action point."
+
+[[items]]
+id = "target.double_click"
+owner = "Target"
+name = "double_click"
+kind = "method"
+returns = "Match"
+summary = "Resolve, wait, move, and double-click the action point."
+
+[[items]]
+id = "target.middle_click"
+owner = "Target"
+name = "middle_click"
+kind = "method"
+returns = "Match"
+summary = "Resolve, wait, move, and middle-click the action point."
+
+[[items]]
+id = "target.hover"
+owner = "Target"
+name = "hover"
+kind = "method"
+returns = "Match"
+summary = "Resolve, wait, and move to the action point without clicking."
+
+[[items]]
+id = "target.type_text"
+owner = "Target"
+name = "type_text"
+kind = "method"
+params = [{ name = "text", type = "string" }]
+returns = "Match"
+summary = "Resolve, click, and type Unicode text."
+
+[[items]]
+id = "target.press"
+owner = "Target"
+name = "press"
+kind = "method"
+params = [{ name = "keys", type = "string" }]
+returns = "Match"
+summary = "Resolve, move to the target, and press a key combination."
+
+[[items]]
+id = "target.scroll"
+owner = "Target"
+name = "scroll"
+kind = "method"
+params = [{ name = "horizontal", type = "int" }, { name = "vertical", type = "int" }]
+returns = "Match"
+summary = "Resolve, move to the target, and scroll."
+
+[[items]]
+id = "target.drag_to"
+owner = "Target"
+name = "drag_to"
+kind = "method"
+params = [{ name = "destination", type = "Target" }]
+returns = "unit"
+summary = "Resolve both endpoints, then drag this target to the destination."
+details = "Both searches complete before the mouse button is pressed."
+
+[[items]]
+id = "target.resolve"
+owner = "Target"
+name = "resolve"
+kind = "method"
+returns = "Match"
+summary = "Search now and return a coordinate snapshot."
+details = "This always searches again regardless of the recheck setting."
+
+[[items]]
+id = "target.exists"
+owner = "Target"
+name = "exists"
+kind = "method"
+returns = "bool"
+summary = "Check once without waiting."
+details = "Geometric locators always return true. Absence returns false; other failures remain errors."
+
+[[items]]
+id = "target.wait_vanish"
+owner = "Target"
+name = "wait_vanish"
+kind = "method"
+params = [{ name = "ms", type = "int" }]
+returns = "bool"
+summary = "Wait for the target to disappear, returning false on timeout."
+details = "A non-positive duration uses the target or global default."
+
+[[items]]
+id = "target.highlight"
+owner = "Target"
+name = "highlight"
+kind = "method"
+params = [{ name = "ms", type = "int" }]
+returns = "Match"
+summary = "Resolve and display the matched rectangle for a duration."
+details = "The call blocks while highlighted. Negative durations become zero."
+
+[[items]]
+id = "target.expect"
+owner = "Target"
+name = "expect"
+kind = "method"
+returns = "Expect"
+summary = "Create an assertion preserving this target's modifiers."
+
+[[items]]
+id = "target.to_string"
+owner = "Target"
+name = "to_string"
+kind = "method"
+returns = "string"
+summary = "Return a diagnostic representation."
+
+[[items]]
+id = "target.to_debug"
+owner = "Target"
+name = "to_debug"
+kind = "method"
+returns = "string"
+summary = "Return a diagnostic representation for Rhai debugging."
+
+# Match
+
+[[items]]
+id = "match.x"
+owner = "Match"
+name = "x"
+kind = "property"
+returns = "int"
+summary = "Return the stored rectangle's left coordinate."
+
+[[items]]
+id = "match.y"
+owner = "Match"
+name = "y"
+kind = "property"
+returns = "int"
+summary = "Return the stored rectangle's top coordinate."
+
+[[items]]
+id = "match.width"
+owner = "Match"
+name = "width"
+kind = "property"
+returns = "int"
+summary = "Return the stored rectangle width."
+
+[[items]]
+id = "match.height"
+owner = "Match"
+name = "height"
+kind = "property"
+returns = "int"
+summary = "Return the stored rectangle height."
+
+[[items]]
+id = "match.center_x"
+owner = "Match"
+name = "center_x"
+kind = "property"
+returns = "int"
+summary = "Return the stored rectangle's center x coordinate."
+
+[[items]]
+id = "match.center_y"
+owner = "Match"
+name = "center_y"
+kind = "property"
+returns = "int"
+summary = "Return the stored rectangle's center y coordinate."
+
+[[items]]
+id = "match.score"
+owner = "Match"
+name = "score"
+kind = "property"
+returns = "float"
+summary = "Return the similarity score."
+details = "Direct geometric locators produce 1.0."
+
+[[items]]
+id = "match.click"
+owner = "Match"
+name = "click"
+kind = "method"
+returns = "unit"
+summary = "Left-click the stored action point without searching again."
+
+[[items]]
+id = "match.right_click"
+owner = "Match"
+name = "right_click"
+kind = "method"
+returns = "unit"
+summary = "Right-click the stored action point without searching again."
+
+[[items]]
+id = "match.double_click"
+owner = "Match"
+name = "double_click"
+kind = "method"
+returns = "unit"
+summary = "Double-click the stored action point without searching again."
+
+[[items]]
+id = "match.middle_click"
+owner = "Match"
+name = "middle_click"
+kind = "method"
+returns = "unit"
+summary = "Middle-click the stored action point without searching again."
+
+[[items]]
+id = "match.hover"
+owner = "Match"
+name = "hover"
+kind = "method"
+returns = "unit"
+summary = "Move to the stored action point without searching again."
+
+[[items]]
+id = "match.highlight"
+owner = "Match"
+name = "highlight"
+kind = "method"
+params = [{ name = "ms", type = "int" }]
+returns = "unit"
+summary = "Display the stored rectangle for a duration."
+
+[[items]]
+id = "match.region"
+owner = "Match"
+name = "region"
+kind = "method"
+returns = "Region"
+summary = "Convert the stored rectangle into a plain search scope."
+
+[[items]]
+id = "match.to_string"
+owner = "Match"
+name = "to_string"
+kind = "method"
+returns = "string"
+summary = "Return a diagnostic representation."
+
+[[items]]
+id = "match.to_debug"
+owner = "Match"
+name = "to_debug"
+kind = "method"
+returns = "string"
+summary = "Return a diagnostic representation for Rhai debugging."
+
+# Assertions
+
+[[items]]
+id = "expect.to_appear"
+owner = "Expect"
+name = "to_appear"
+kind = "method"
+params = [{ name = "ms", type = "int" }]
+returns = "Match"
+summary = "Require at least one match and return it."
+errors = ["A timeout is a runtime error."]
+
+[[items]]
+id = "expect.to_vanish"
+owner = "Expect"
+name = "to_vanish"
+kind = "method"
+params = [{ name = "ms", type = "int" }]
+returns = "unit"
+summary = "Require all matches to disappear."
+errors = ["A timeout is a runtime error."]
+
+[[items]]
+id = "expect.to_have_count"
+owner = "Expect"
+name = "to_have_count"
+kind = "method"
+params = [{ name = "count", type = "int" }, { name = "ms", type = "int" }]
+returns = "array<Match>"
+summary = "Require exactly a count of matches and return them."
+constraints = ["Negative counts become zero."]
+errors = ["A timeout is a runtime error."]
+
+[[items]]
+id = "expect.to_have_count_at_least"
+owner = "Expect"
+name = "to_have_count_at_least"
+kind = "method"
+params = [{ name = "count", type = "int" }, { name = "ms", type = "int" }]
+returns = "array<Match>"
+summary = "Require at least a count of matches and return all current matches."
+constraints = ["Negative counts become zero."]
+errors = ["A timeout is a runtime error."]
+
+[[items]]
+id = "expect.to_have_count_at_most"
+owner = "Expect"
+name = "to_have_count_at_most"
+kind = "method"
+params = [{ name = "count", type = "int" }, { name = "ms", type = "int" }]
+returns = "array<Match>"
+summary = "Require at most a count of matches and return all current matches."
+constraints = ["Negative counts become zero."]
+errors = ["A timeout is a runtime error."]
+
+[[items]]
+id = "window_expect.to_appear"
+owner = "WindowExpect"
+name = "to_appear"
+kind = "method"
+params = [{ name = "ms", type = "int" }]
+returns = "Region"
+summary = "Wait for the window and return a window-backed region."
+errors = ["A timeout is a runtime error."]
+
+[[items]]
+id = "window_expect.to_vanish"
+owner = "WindowExpect"
+name = "to_vanish"
+kind = "method"
+params = [{ name = "ms", type = "int" }]
+returns = "unit"
+summary = "Wait until no window matches."
+errors = ["A timeout is a runtime error."]

@@ -1,0 +1,49 @@
+[package]
+name = "mekiki-mcp"
+version.workspace = true
+edition.workspace = true
+# **This crate alone raises the MSRV.** rmcp 3.x needs 1.88, and the MCP server
+# is an optional extra binary — the crates the IDE and CLI are built from stay on
+# the workspace floor of 1.85.
+rust-version = "1.88"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "mekiki-mcp"
+path = "src/main.rs"
+
+[lib]
+name = "mekiki_mcp"
+path = "src/lib.rs"
+
+[dependencies]
+mekiki-core.workspace = true
+mekiki-scripting.workspace = true
+
+rmcp = { version = "3.1", features = ["server", "transport-io", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "sync", "time"] }
+schemars = "1"
+
+serde.workspace = true
+serde_json.workspace = true
+image.workspace = true
+log.workspace = true
+env_logger.workspace = true
+rhai.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+# Tray icon and its menu (see src/tray.rs). The crate also supports macOS and
+# Linux, but it is declared per target on purpose: the Linux CI build must not
+# start needing GTK and libappindicator before a Linux tray is actually wired up.
+tray-icon = { version = "0.24", default-features = false }
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_RemoteDesktop",
+    "Win32_System_StationsAndDesktops",
+    "Win32_System_Threading",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+] }

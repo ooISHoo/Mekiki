@@ -1,0 +1,8 @@
+Mekiki
+Copyright 2026 Mekiki contributors
+
+This product includes software derived from template-matching,
+Copyright (c) 2023 Urho Laukkarinen, licensed under the MIT License.
+The complete upstream license text is included in Mekiki's third-party
+license materials and is preserved in the source distribution at
+crates/matching/LICENSE-THIRD-PARTY.
