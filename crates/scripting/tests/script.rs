@@ -267,9 +267,7 @@ struct ApiShape {
 }
 
 fn reflected_shape(signature: &str) -> ApiShape {
-    let (call, raw_return) = signature
-        .split_once(" -> ")
-        .map_or((signature, "unit"), |parts| parts);
+    let (call, raw_return) = signature.split_once(" -> ").unwrap_or((signature, "unit"));
     let (raw_name, raw_params) = call.split_once('(').expect("reflected function call");
     let mut params: Vec<String> = raw_params
         .trim_end_matches(')')

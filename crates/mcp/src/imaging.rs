@@ -67,8 +67,9 @@ fn to_rgba(bgra: &[u8], width: u32, height: u32) -> Result<RgbaImage, String> {
             bgra.len()
         ));
     }
-    let rgba: Vec<u8> = bgra[..expected]
-        .chunks_exact(4)
+    let (pixels, _) = bgra[..expected].as_chunks::<4>();
+    let rgba: Vec<u8> = pixels
+        .iter()
         .flat_map(|p| [p[2], p[1], p[0], 255])
         .collect();
     ImageBuffer::<Rgba<u8>, _>::from_raw(width, height, rgba)
