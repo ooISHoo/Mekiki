@@ -11,8 +11,9 @@
 //! developer's machine, and a test that moved the mouse would be intolerable in
 //! both.
 
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 mod common;
@@ -22,6 +23,12 @@ struct Server {
     child: Child,
     stdin: ChildStdin,
     stdout: BufReader<ChildStdout>,
+    /// Everything the server wrote to stderr, drained on a helper thread.
+    ///
+    /// Only shown when the server dies unexpectedly. Without it a startup
+    /// failure on a machine nobody can log into (CI) is invisible: the test
+    /// just sees stdout close.
+    stderr: Arc<Mutex<String>>,
     next_id: u64,
     /// Responses read while waiting for a different id.
     ///
@@ -61,16 +68,27 @@ impl Server {
         command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null());
+            .stderr(Stdio::piped());
 
         let mut child = command.spawn().expect("cannot start mekiki-mcp");
         let stdin = child.stdin.take().unwrap();
         let stdout = BufReader::new(child.stdout.take().unwrap());
+        let stderr = Arc::new(Mutex::new(String::new()));
+        {
+            let mut pipe = child.stderr.take().unwrap();
+            let sink = stderr.clone();
+            std::thread::spawn(move || {
+                let mut text = String::new();
+                let _ = pipe.read_to_string(&mut text);
+                sink.lock().unwrap().push_str(&text);
+            });
+        }
 
         let mut server = Self {
             child,
             stdin,
             stdout,
+            stderr,
             next_id: 1,
             pending: Vec::new(),
             instructions: String::new(),
@@ -155,11 +173,23 @@ impl Server {
                 .stdout
                 .read_line(&mut line)
                 .expect("cannot read from the server");
-            assert!(
-                read > 0,
-                "the server closed stdout while waiting for id {id} \
-                 (it may have hung and been killed by the watchdog)"
-            );
+            if read == 0 {
+                // Give the process a moment to finish dying so the exit status
+                // and the tail of stderr are there to report.
+                std::thread::sleep(Duration::from_millis(200));
+                let status = match self.child.try_wait() {
+                    Ok(Some(status)) => format!("{status}"),
+                    Ok(None) => "still running".to_string(),
+                    Err(e) => format!("unknown ({e})"),
+                };
+                let stderr = self.stderr.lock().unwrap().clone();
+                panic!(
+                    "the server closed stdout while waiting for id {id}                      (it may have hung and been killed by the watchdog)
+                     exit status: {status}
+stderr:
+{stderr}"
+                );
+            }
             if line.trim().is_empty() {
                 continue;
             }
