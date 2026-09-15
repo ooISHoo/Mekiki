@@ -444,8 +444,30 @@ def generate() -> dict:
     return manifest
 
 
+# --check の許容誤差。
+#
+# 同じ OpenCV 4.11 でも Linux と Windows のホイールでは SIMD 経路と加算順序が
+# 違い、f32 のフルマップが最大 5.3e-6（ZMD）、SSD の極値が相対 6e-7 ずれる
+# （2026-09 に WSL の Ubuntu で実測）。1e-7 の等値比較は生成した機械でしか
+# 通らない。ここでの目的は「手で書き換えたゴールデン」を弾くことなので、
+# Rust 側のゲート（zmd_abs 5e-5 / ssd_rel 1e-4）より一桁厳しい値にする。
+CHECK_ZMD_ABS = 1e-5
+CHECK_SSD_REL = 1e-5
+
+
+def _check_tolerance(method_key: str, scale: float) -> float:
+    if method_key == "zmd":
+        return CHECK_ZMD_ABS
+    return CHECK_SSD_REL * max(1.0, abs(scale))
+
+
 def check() -> int:
-    """既存のゴールデンを OpenCV で再計算して照合する（再生成はしない）。"""
+    """既存のゴールデンを OpenCV で再計算して照合する（再生成はしない）。
+
+    極値の位置は等値ではなく「保存された位置が今も最大値の一つか」で判定する。
+    `repeated` のように同点のピークが複数あると、argmax はプラットフォームごとの
+    丸めの差で別の同点位置を返すため。
+    """
     manifest_path = OUT_ROOT / "manifest.json"
     if not manifest_path.exists():
         print(f"manifest が無い: {manifest_path}", file=sys.stderr)
@@ -460,12 +482,15 @@ def check() -> int:
         for method_key, exp in case["methods"].items():
             got = compute_expected(scene, template, method_key)
             full = got.pop("_full")
-            if abs(got["max"] - exp["max"]) > 1e-6 or got["max_loc"] != exp["max_loc"]:
+            tol = _check_tolerance(method_key, exp["max"])
+            x, y = exp["max_loc"]
+            at_stored = float(full[y, x])
+            if abs(got["max"] - exp["max"]) > tol or abs(at_stored - got["max"]) > tol:
                 print(f"NG {case['name']}/{method_key}: 極値が不一致", file=sys.stderr)
                 failures += 1
             if exp.get("full_map"):
                 stored = np.frombuffer((OUT_ROOT / exp["full_map"]).read_bytes(), dtype="<f4")
-                if not np.allclose(stored, full.reshape(-1), atol=1e-7):
+                if not np.allclose(stored, full.reshape(-1), atol=tol, rtol=0.0):
                     print(f"NG {case['name']}/{method_key}: フルマップが不一致", file=sys.stderr)
                     failures += 1
 
