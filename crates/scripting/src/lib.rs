@@ -577,12 +577,11 @@ fn register_region(engine: &mut Engine) {
     );
 
     engine.register_fn("read_text", |r: &mut ScriptRegion| -> RhaiResult<Array> {
-        let lines = r
-            .rt
-            .borrow_mut()
-            .mekiki
-            .read_text(r.region)
-            .map_err(api::from_core)?;
+        let lines =
+            r.rt.borrow_mut()
+                .mekiki
+                .read_text(r.region)
+                .map_err(api::from_core)?;
         Ok(lines.into_iter().map(|l| Dynamic::from(l.text)).collect())
     });
 
@@ -623,12 +622,11 @@ fn register_region(engine: &mut Engine) {
     engine.register_fn(
         "save",
         |r: &mut ScriptRegion, path: &str| -> RhaiResult<()> {
-            let frame = r
-                .rt
-                .borrow_mut()
-                .mekiki
-                .capture_region(r.region)
-                .map_err(api::from_core)?;
+            let frame =
+                r.rt.borrow_mut()
+                    .mekiki
+                    .capture_region(r.region)
+                    .map_err(api::from_core)?;
             mekiki_core::artifacts::save_frame(&frame, Path::new(path))
                 .map_err(|e| api::runtime_error(format!("cannot save '{path}': {e}")))
         },
@@ -1016,12 +1014,11 @@ fn find_all_impl(t: &ScriptTarget) -> RhaiResult<Dynamic> {
 }
 
 fn list_ui_impl(r: &mut ScriptRegion, control_type: Option<&str>) -> RhaiResult<Array> {
-    let items = r
-        .rt
-        .borrow_mut()
-        .mekiki
-        .list_ui(r.region, control_type)
-        .map_err(api::from_core)?;
+    let items =
+        r.rt.borrow_mut()
+            .mekiki
+            .list_ui(r.region, control_type)
+            .map_err(api::from_core)?;
     Ok(items
         .into_iter()
         .map(|i| Dynamic::from(ui_locator_of(&i)))

@@ -1,3 +1,7 @@
+// Tests override a handful of settings after `Default::default()`; the
+// struct-update form would not be clearer across a dozen sites.
+#![allow(clippy::field_reassign_with_default)]
+
 //! Integration tests for the whole search pipeline.
 //!
 //! Substituting fakes for capture and input verifies the end-to-end path —

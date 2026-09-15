@@ -337,12 +337,15 @@ fn sweep(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// A hit: x, y, and score.
+type Hit = (u32, u32, f32);
+
 /// List the high-scoring positions with overlaps removed.
 fn find_hits(
     matcher: &mut TemplateMatcher,
     haystack: &Image<'_>,
     template: &Image<'_>,
-) -> Result<Vec<(u32, u32, f32)>, Box<dyn std::error::Error>> {
+) -> Result<Vec<Hit>, Box<dyn std::error::Error>> {
     let scores = matcher.match_template(haystack, template, MatchMethod::ZeroMeanDice)?;
 
     let mut hits: Vec<(u32, u32, f32)> = scores

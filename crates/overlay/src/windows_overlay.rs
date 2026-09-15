@@ -655,6 +655,10 @@ fn paint_marks(hdc: windows::Win32::Graphics::Gdi::HDC, state: &MarksPaint) {
     }
 }
 
+// GDI drawing needs the device context, the geometry, and the brush as
+// separate handles; bundling them into a struct would only move the same
+// eight values one level down.
+#[allow(clippy::too_many_arguments)]
 fn draw_label(
     hdc: windows::Win32::Graphics::Gdi::HDC,
     mark: &Mark,

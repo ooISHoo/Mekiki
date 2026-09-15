@@ -1,3 +1,10 @@
-# ゴールデン生成とベンチ比較にだけ使う。ランタイム依存ではない。
-opencv-python>=4.8
+# Used only to generate the golden fixtures and to run the OpenCV benchmark
+# comparison. Not a runtime dependency of Mekiki.
+#
+# OpenCV is pinned to the exact release the committed fixtures were generated
+# with. `gen_golden.py --check` compares full float32 maps at 1e-7, and
+# matchTemplate's numerics changed after 4.11 (4.14 and 5.0 both fail the
+# check by ~1e-6), so a floating pin would make CI fail on fixtures that are
+# still correct. Bump the pin only together with regenerated fixtures.
+opencv-python==4.11.0.86
 numpy>=1.24

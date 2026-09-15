@@ -271,10 +271,7 @@ impl ScriptTarget {
     }
 
     fn remember(&self, m: &Match) {
-        self.rt
-            .borrow_mut()
-            .hits
-            .insert(self.cache_key(), m.clone());
+        self.rt.borrow_mut().hits.insert(self.cache_key(), *m);
     }
 
     fn forget(&self) {
