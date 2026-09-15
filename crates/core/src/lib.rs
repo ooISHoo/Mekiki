@@ -342,12 +342,25 @@ pub struct Mekiki {
     /// Stop and pause requests from outside. Nothing touches it by default, so
     /// it has no effect on a run.
     pub(crate) interrupt: Interrupt,
+    /// How many searches the most recent wait skipped because the screen had
+    /// not changed. Diagnostics and tests; see [`Mekiki::last_wait_skipped_searches`].
+    pub(crate) last_wait_skipped: u32,
     pub settings: Settings,
 }
 
 impl Mekiki {
     pub fn new() -> Result<Self> {
         Self::with_settings(Settings::default())
+    }
+
+    /// The number of searches the most recent wait skipped because change
+    /// detection saw an unchanged screen.
+    ///
+    /// This is the observable effect of `Settings::change_detection`: the
+    /// capture still happens on every poll, only the template search is
+    /// skipped, so neither capture counts nor elapsed time show it reliably.
+    pub fn last_wait_skipped_searches(&self) -> u32 {
+        self.last_wait_skipped
     }
 
     /// Construct with substituted backends.
@@ -369,6 +382,7 @@ impl Mekiki {
             ocr: None,
             uia: None,
             interrupt: Interrupt::new(),
+            last_wait_skipped: 0,
             settings,
         }
     }
@@ -393,6 +407,7 @@ impl Mekiki {
             ocr: None,
             uia: None,
             interrupt: Interrupt::new(),
+            last_wait_skipped: 0,
             settings,
         })
     }

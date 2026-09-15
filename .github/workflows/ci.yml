@@ -57,6 +57,9 @@ jobs:
       #
       # MEKIKI_REQUIRE_GPU は立てない。GitHub の Windows ランナーには GPU が無く、
       # GPU 経路は下の portability ジョブ（lavapipe）で検証する。
+      # ランナーにはソフトウェア描画の WARP だけがあり、これは wgpu 経由で
+      # アクセス違反を起こしたため、エンジン側が既定で拒否する
+      # （MEKIKI_ALLOW_SOFTWARE_GPU を立てない限り CPU 実装に落ちる）。
       - run: cargo test --workspace --release --features mekiki-ide/custom-protocol
 
   # Linux は「対象プラットフォーム」ではない。設計の健全性を測る道具として回す。
@@ -86,15 +89,20 @@ jobs:
       # 見たいのはコアの移植性であって、GUI の移植性ではない。
       - run: cargo build --release -p mekiki-matching -p mekiki-capture -p mekiki-input -p mekiki-overlay -p mekiki-core -p mekiki-scripting
 
-      # lavapipe があるので GPU 経路の skip を許さない。
+      # lavapipe があるので GPU 経路の skip を許さない。lavapipe はソフトウェア
+      # 描画なので、エンジンの既定では拒否される。ここでは明示的に許可する。
       - name: マッチングのゴールデンテスト（GPU 経路込み）
         run: cargo test -p mekiki-matching --release
         env:
           MEKIKI_REQUIRE_GPU: "1"
+          MEKIKI_ALLOW_SOFTWARE_GPU: "1"
           WGPU_BACKEND: vulkan
 
       - name: プラットフォーム非依存クレートのテスト
         run: cargo test -p mekiki-core -p mekiki-capture -p mekiki-input --release
+        env:
+          MEKIKI_ALLOW_SOFTWARE_GPU: "1"
+          WGPU_BACKEND: vulkan
 
   goldens:
     name: ゴールデンが OpenCV と一致しているか

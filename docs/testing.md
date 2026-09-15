@@ -28,6 +28,13 @@ duplicate labels, controls moving during a wait, low-variance images, layered
 windows, negative monitor coordinates, provider elements without RuntimeId, and
 modal dialogs are more diagnostic than a long happy-path script.
 
+The matcher refuses software GPU adapters (WARP, lavapipe) unless
+`MEKIKI_ALLOW_SOFTWARE_GPU` is set, and falls back to the CPU path. Tests that
+need the GPU skip on such machines unless `MEKIKI_REQUIRE_GPU` is also set. The
+Linux CI job sets both to run the shaders on lavapipe; the Windows CI job sets
+neither, because the runner's only adapter is WARP, which crashed the test
+process.
+
 Application success is not inferred from tool return values alone. Read the
 resulting field, inspect a stable UI state, or parse the saved artifact. Tests
 must clean only their dedicated output and profile directories.

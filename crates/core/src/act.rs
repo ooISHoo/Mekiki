@@ -336,9 +336,20 @@ impl Act<'_> {
 impl Mekiki {
     /// Resolve to a single match, including the automatic wait.
     pub(crate) fn wait_actionable(&mut self, target: &Target) -> Result<Match> {
+        let mut wait_state = WaitState::default();
+        let result = self.wait_actionable_loop(target, &mut wait_state);
+        // Recorded on every exit so callers can see what change detection did.
+        self.last_wait_skipped = wait_state.skipped_total;
+        result
+    }
+
+    fn wait_actionable_loop(
+        &mut self,
+        target: &Target,
+        wait_state: &mut WaitState,
+    ) -> Result<Match> {
         let timeout = target.timeout.unwrap_or(self.settings.auto_wait_timeout);
         let started = Instant::now();
-        let mut wait_state = WaitState::default();
 
         // Progress from the most recent iteration that **actually searched**.
         //
@@ -388,7 +399,7 @@ impl Mekiki {
 
                 // Skip the search if the screen has not changed since last time
                 // (Phase 4-2).
-                if self.frame_unchanged(&frame, &mut wait_state) {
+                if self.frame_unchanged(&frame, wait_state) {
                     if elapsed() >= timeout {
                         return Err(self.find_failed(target, &last_attempt, elapsed()));
                     }

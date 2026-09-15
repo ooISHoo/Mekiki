@@ -68,6 +68,11 @@ pub(crate) fn tile_fits(template: (u32, u32)) -> bool {
 pub enum MatchError {
     /// No usable adapter (no GPU, no driver installed, and so on).
     NoAdapter,
+    /// The only adapter is a software rasterizer (WARP on Windows, lavapipe on
+    /// Linux). Refused unless `MEKIKI_ALLOW_SOFTWARE_GPU` is set: they are
+    /// slower than the CPU path and WARP crashed the process on GitHub's
+    /// Windows runners (STATUS_ACCESS_VIOLATION, 2026-09).
+    SoftwareAdapter(String),
     /// Device creation failed.
     DeviceRequest(String),
     /// The template is larger than the input, or a size is 0.
@@ -83,6 +88,10 @@ impl fmt::Display for MatchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::NoAdapter => write!(f, "no usable GPU adapter found"),
+            Self::SoftwareAdapter(name) => write!(
+                f,
+                "the only GPU adapter is a software rasterizer ({name}); set MEKIKI_ALLOW_SOFTWARE_GPU=1 to use it anyway"
+            ),
             Self::DeviceRequest(e) => write!(f, "failed to create the wgpu device: {e}"),
             Self::InvalidSize { input, template } => write!(
                 f,
@@ -200,6 +209,15 @@ impl TemplateMatcher {
             adapter_info.backend,
             adapter_info.device_type
         );
+
+        // A software rasterizer is not a GPU for our purposes: the CPU path is
+        // faster, and WARP has crashed the process outright. CI opts in on
+        // Linux, where lavapipe is used to exercise the shader.
+        if adapter_info.device_type == wgpu::DeviceType::Cpu
+            && std::env::var_os("MEKIKI_ALLOW_SOFTWARE_GPU").is_none()
+        {
+            return Err(MatchError::SoftwareAdapter(adapter_info.name));
+        }
 
         // A 4K f32 image is about 33MB. The default limits allow storage
         // buffers up to 128MB, which is enough, but we request the adapter's

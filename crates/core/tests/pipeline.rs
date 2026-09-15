@@ -82,11 +82,9 @@ impl ScreenCapture for ScriptedCapture {
 
 /// A capture that always returns the same frame and **counts the captures**.
 ///
-/// Used to see whether change detection (Phase 4-2) is skipping searches. There
-/// is one capture per search, so "skipped" does not mean "fewer captures than
-/// polls": the capture count is unchanged and **only the search** goes away.
-/// Counting the searches would mean counting the calls that involve template
-/// matching separately, but rather than peer inside, this measures elapsed time.
+/// A capture backend that counts its calls. Change detection (Phase 4-2)
+/// captures on every poll and skips only the search, so the capture count is
+/// **not** how skipping shows up; `Mekiki::last_wait_skipped_searches` is.
 struct CountingCapture {
     width: u32,
     height: u32,
@@ -621,7 +619,7 @@ fn change_detection_skips_searching_on_a_static_screen() {
     // A reasonably large screen and pattern, so the search is expensive.
     let canvas = Canvas::new(600, 500);
 
-    let elapsed = |enabled: bool| -> Duration {
+    let skipped = |enabled: bool| -> u32 {
         let captures = Arc::new(Mutex::new(0usize));
         let capture = CountingCapture {
             width: canvas.width,
@@ -664,24 +662,25 @@ fn change_detection_skips_searching_on_a_static_screen() {
         let s = m.primary_screen().unwrap();
         let t = m.target(s, &p);
 
-        let started = std::time::Instant::now();
         let _ = m.on(&t).resolve();
-        started.elapsed()
+        m.last_wait_skipped_searches()
     };
 
-    let without = elapsed(false);
-    let with = elapsed(true);
-
-    // Both run until the 300ms timeout, so the total time is not where the
-    // difference shows: it is in how many searches happen inside that timeout.
-    // With change detection working, there is one search and the rest is waiting.
-    //
-    // A single search costs tens of milliseconds here, so with it disabled the
-    // run overshoots the timeout substantially — it cannot exit until the last
-    // search finishes.
+    // Both run until the 300ms timeout. Elapsed time is not a usable signal:
+    // on a fast machine a search costs well under a millisecond and the two
+    // runs finish within noise of each other (seen on GitHub's Linux runner).
+    // What change detection changes is how many of the polls inside that
+    // timeout actually search: with it on, the first poll searches and every
+    // later one is skipped; with it off, nothing is ever skipped.
+    let without = skipped(false);
+    let with = skipped(true);
+    assert_eq!(
+        without, 0,
+        "searches were skipped with change detection off"
+    );
     assert!(
-        with <= without,
-        "enabling change detection made it slower: {with:?} vs {without:?}"
+        with > 0,
+        "change detection never skipped a search on a static screen"
     );
 }
 
