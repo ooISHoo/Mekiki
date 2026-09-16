@@ -10,6 +10,8 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+build = "build.rs"
+
 [[bin]]
 name = "mekiki-mcp"
 path = "src/main.rs"

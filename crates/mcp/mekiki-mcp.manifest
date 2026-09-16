@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Application manifest embedded into mekiki-mcp.exe (see build.rs).
+
+  Common Controls v6 is required by the tray menu (tray-icon / muda): the
+  subclassing API it imports (SetWindowSubclass and friends) is only reliably
+  exported by name from comctl32 v6. Without this manifest the loader binds to
+  comctl32 v5 and the process dies before main() with
+  STATUS_ENTRYPOINT_NOT_FOUND (0xc0000139), as seen on GitHub's Windows runner.
+  The IDE gets the same dependency from tauri-build.
+-->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity type="win32" name="org.ooishoo.mekiki.mcp" version="0.0.1.0" processorArchitecture="*"/>
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"/>
+    </dependentAssembly>
+  </dependency>
+</assembly>

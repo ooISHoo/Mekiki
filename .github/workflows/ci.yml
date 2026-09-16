@@ -19,8 +19,8 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      # IDE は Tauri アプリなので、フロントエンドの成果物が無いとビルドできない
-      # （tauri-build が frontendDist の存在を確かめる）。
+      # The IDE is a Tauri app and cannot build without the frontend output
+      # (tauri-build checks that frontendDist exists).
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -32,8 +32,8 @@ jobs:
         working-directory: ide
       - run: cargo run -p mekiki-api-gen -- --check
       - run: cargo fmt --all -- --check
-      # custom-protocol を付けるのは、これが無いと IDE が dev モード扱いになり
-      # 開発サーバを前提にしたビルドになるため。
+      # custom-protocol is required: without it the IDE is treated as a dev
+      # build that expects the Vite dev server.
       - run: cargo clippy --workspace --all-targets --features mekiki-ide/custom-protocol -- -D warnings
 
   test:
@@ -52,25 +52,49 @@ jobs:
         working-directory: ide
       - run: npm run build
         working-directory: ide
-      # テストは release で回す。CPU 参照実装が debug だと桁違いに遅く、
-      # ゴールデン 8 ケースを回しきれない。
+      # Tests run in release: the CPU reference implementation is orders of
+      # magnitude slower in debug and the golden cases would not finish.
       #
-      # MEKIKI_REQUIRE_GPU は立てない。GitHub の Windows ランナーには GPU が無く、
-      # GPU 経路は下の portability ジョブ（lavapipe）で検証する。
-      # ランナーにはソフトウェア描画の WARP だけがあり、これは wgpu 経由で
-      # アクセス違反を起こしたため、エンジン側が既定で拒否する
-      # （MEKIKI_ALLOW_SOFTWARE_GPU を立てない限り CPU 実装に落ちる）。
+      # MEKIKI_REQUIRE_GPU is deliberately not set. GitHub's Windows runners
+      # have no GPU; the GPU path is verified by the portability job below
+      # (lavapipe). The only adapter on the runner is the WARP software
+      # rasterizer, which crashed the process through wgpu, so the engine
+      # refuses software adapters by default and falls back to the CPU path
+      # unless MEKIKI_ALLOW_SOFTWARE_GPU is set.
+      #
+      # Tests that need a real desktop, GPU, or language pack are not part of
+      # this job; they belong to the release validation on a real machine
+      # (docs/testing.md).
       - run: cargo test --workspace --release --features mekiki-ide/custom-protocol
 
-  # Linux は「対象プラットフォーム」ではない。設計の健全性を測る道具として回す。
+      # When a child process dies before main() (for example
+      # STATUS_ENTRYPOINT_NOT_FOUND, 0xc0000139) the test only sees a closed
+      # pipe. The loader's own message lands in the System event log, so dump
+      # it here together with the binary's exit code.
+      - name: Diagnose a server that failed to start
+        if: failure()
+        shell: pwsh
+        run: |
+          Write-Host "--- mekiki-mcp --help ---"
+          & target\release\mekiki-mcp.exe --help
+          Write-Host "exit code: $LASTEXITCODE"
+          Write-Host "--- comctl32 ---"
+          (Get-Item C:\Windows\System32\comctl32.dll).VersionInfo | Format-List FileVersion, ProductVersion
+          Write-Host "--- System log: loader popups (event 26) ---"
+          Get-WinEvent -FilterHashtable @{LogName='System'; Id=26} -MaxEvents 20 -ErrorAction SilentlyContinue |
+            ForEach-Object { $_.TimeCreated.ToString('s') + '  ' + ($_.Message -replace "`r?`n", ' ') }
+          Write-Host "--- Application log: recent errors ---"
+          Get-WinEvent -FilterHashtable @{LogName='Application'; Level=2} -MaxEvents 20 -ErrorAction SilentlyContinue |
+            ForEach-Object { $_.TimeCreated.ToString('s') + '  ' + $_.ProviderName + '  ' + ($_.Message -replace "`r?`n", ' ') }
+
+  # Linux is not a target platform. This job is a design check:
   #
-  #   1. OS 依存コードが capture / input の内側に収まっているか
-  #      （漏れていればここでビルドが壊れる）
-  #   2. GPU シェーダの退行検出。GPU の無いランナーでも lavapipe で実際に走らせる
-  #
-  # 詳細は開発計画書 §6。
+  #   1. OS-dependent code stays inside capture / input (a leak breaks the
+  #      build here).
+  #   2. GPU shader regressions are caught by really running the shaders on
+  #      lavapipe, even though the runner has no GPU.
   portability:
-    name: 非 Windows ビルド + GPU シェーダ検証
+    name: non-Windows build + GPU shader check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,28 +108,29 @@ jobs:
             mesa-vulkan-drivers libvulkan1 vulkan-tools
           vulkaninfo --summary || true
 
-      # OS 依存が上位レイヤへ漏れていないことを確かめる。
-      # IDE（Tauri）は Linux で追加の系依存ライブラリを要求するので、対象から外す。
-      # 見たいのはコアの移植性であって、GUI の移植性ではない。
+      # Confirms that OS dependencies do not leak into the upper layers.
+      # The IDE (Tauri) needs extra system libraries on Linux and is excluded:
+      # this checks the portability of the core, not of the GUI.
       - run: cargo build --release -p mekiki-matching -p mekiki-capture -p mekiki-input -p mekiki-overlay -p mekiki-core -p mekiki-scripting
 
-      # lavapipe があるので GPU 経路の skip を許さない。lavapipe はソフトウェア
-      # 描画なので、エンジンの既定では拒否される。ここでは明示的に許可する。
-      - name: マッチングのゴールデンテスト（GPU 経路込み）
+      # lavapipe is available, so a skipped GPU path is a failure here. It is
+      # a software rasterizer, which the engine refuses by default; allow it
+      # explicitly.
+      - name: Matching golden tests (including the GPU path)
         run: cargo test -p mekiki-matching --release
         env:
           MEKIKI_REQUIRE_GPU: "1"
           MEKIKI_ALLOW_SOFTWARE_GPU: "1"
           WGPU_BACKEND: vulkan
 
-      - name: プラットフォーム非依存クレートのテスト
+      - name: Platform-independent crate tests
         run: cargo test -p mekiki-core -p mekiki-capture -p mekiki-input --release
         env:
           MEKIKI_ALLOW_SOFTWARE_GPU: "1"
           WGPU_BACKEND: vulkan
 
   goldens:
-    name: ゴールデンが OpenCV と一致しているか
+    name: golden fixtures match OpenCV
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -113,6 +138,6 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r tools/golden/requirements.txt
-      # フィクスチャを再生成せず、コミット済みの期待値を OpenCV で検算する。
-      # 「手で書き換えたゴールデンでテストを通す」事故を防ぐのが目的。
+      # Recomputes the committed expectations with OpenCV without regenerating
+      # them. Guards against "make the test pass by editing the goldens".
       - run: python tools/golden/gen_golden.py --check
