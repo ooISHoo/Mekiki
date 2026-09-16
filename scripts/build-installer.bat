@@ -63,17 +63,25 @@ echo Cargo: %CARGO_EXE%
 echo Output: %OUTPUT_DIR%
 echo.
 
+rem Frontend dependencies are always installed: `tauri build` runs `npm run
+rem build` itself and needs them even when the tests are skipped.
+call "%NPM_EXE%" --prefix ide ci
+if errorlevel 1 goto cleanup
+
 if /I not "%MEKIKI_SKIP_TESTS%"=="1" (
-    call "%NPM_EXE%" --prefix ide ci
+    call "%NPM_EXE%" --prefix ide test
     if errorlevel 1 goto cleanup
 
-    call "%NPM_EXE%" --prefix ide test
+    rem Compiling the IDE crate needs the frontend output: tauri's
+    rem generate_context macro fails at compile time when ide\dist is missing,
+    rem which is the case on a clean checkout such as a CI runner.
+    call "%NPM_EXE%" --prefix ide run build
     if errorlevel 1 goto cleanup
 
     "%CARGO_EXE%" test --workspace --release --features mekiki-ide/custom-protocol
     if errorlevel 1 goto cleanup
 ) else (
-    echo MEKIKI_SKIP_TESTS=1: dependency install and tests are skipped.
+    echo MEKIKI_SKIP_TESTS=1: tests are skipped.
 )
 
 "%CARGO_EXE%" build --release -p mekiki-mcp -p mekiki-scripting --bin mekiki-mcp --bin mekiki
