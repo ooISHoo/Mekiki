@@ -46,6 +46,12 @@ CI actually runs.
 
 ## Package publication
 
+Pushing a `v<version>` tag runs `.github/workflows/release.yml`, which builds
+both installers with `scripts/build-installer.bat all` on a GitHub Windows
+runner and attaches them, with `SHA256SUMS`, to a draft release. The tag must
+equal the version in `ide/src-tauri/tauri.conf.json`. Publish the draft only
+after the items below are checked.
+
 - Select which crates are public.
 - Verify package metadata, README, license files, repository links, and excluded
   development assets.

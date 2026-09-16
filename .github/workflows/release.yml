@@ -1,0 +1,82 @@
+name: Release
+
+# Builds the Windows installers and attaches them to a GitHub Release.
+#
+# Triggered by pushing a tag such as v0.0.1, or by hand from the Actions tab
+# (which only uploads the installers as a workflow artifact, so a build can be
+# checked without creating a release). The tag must match the product version
+# in ide/src-tauri/tauri.conf.json; scripts/build-installer.bat names the
+# artifacts after that version.
+#
+# The release is created as a draft so the release notes can be written before
+# anything becomes public.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: "Skip the test suite (CI already ran it for this commit)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  installer:
+    name: Windows installers
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check that the tag matches the product version
+        if: github.event_name == 'push'
+        shell: pwsh
+        run: |
+          $version = (Get-Content ide/src-tauri/tauri.conf.json | ConvertFrom-Json).version
+          $tag = "${env:GITHUB_REF_NAME}".TrimStart("v")
+          if ($tag -ne $version) {
+            Write-Error "tag v$tag does not match tauri.conf.json version $version"
+            exit 1
+          }
+          Write-Host "building version $version"
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ide/package-lock.json
+
+      # NSIS and WiX are downloaded by the Tauri CLI during bundling.
+      # The batch file builds both sidecars (mekiki-mcp.exe, mekiki.exe),
+      # bundles the IDE with the documentation, and writes SHA256SUMS.
+      - name: Build the installers
+        shell: cmd
+        env:
+          MEKIKI_SKIP_TESTS: ${{ inputs.skip_tests && '1' || '' }}
+        run: scripts\build-installer.bat all
+
+      - name: List the artifacts
+        shell: pwsh
+        run: Get-ChildItem dist/installer -Recurse -File | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: mekiki-installers
+          path: dist/installer/**
+          if-no-files-found: error
+
+      - name: Create the draft release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            dist/installer/**/*.exe
+            dist/installer/**/*.msi
+            dist/installer/**/SHA256SUMS-*.txt

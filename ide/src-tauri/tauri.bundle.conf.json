@@ -1,19 +1,37 @@
 {
   "bundle": {
     "externalBin": [
-      "binaries/mekiki-mcp"
+      "binaries/mekiki-mcp",
+      "binaries/mekiki"
     ],
     "resources": {
+      "../../README.md": "README.md",
+      "../../README.ja.md": "README.ja.md",
       "../../AGENTS.md": "AGENTS.md",
       "../../LICENSE": "LICENSE",
+      "../../NOTICE": "NOTICE",
+      "../../docs/script-guide.md": "docs/script-guide.md",
+      "../../docs/script-guide.ja.md": "docs/script-guide.ja.md",
+      "../../docs/ide-guide.md": "docs/ide-guide.md",
+      "../../docs/ide-guide.ja.md": "docs/ide-guide.ja.md",
+      "../../docs/images/*.png": "docs/images/",
+      "../../docs/images/icon-snip.svg": "docs/images/icon-snip.svg",
+      "../../docs/images/icon-paste.svg": "docs/images/icon-paste.svg",
+      "../../docs/images/icon-run.svg": "docs/images/icon-run.svg",
       "../../docs/mcp-start.md": "docs/mcp-start.md",
       "../../docs/mcp-reference.md": "docs/mcp-reference.md",
+      "../../docs/licensing.md": "docs/licensing.md",
+      "../../docs/third-party-software.md": "docs/third-party-software.md",
+      "../../api/generated/rhai-api.md": "api/generated/rhai-api.md",
       "../../examples/": "examples/"
     },
     "windows": {
       "nsis": {
         "installMode": "both",
-        "languages": ["English", "Japanese"],
+        "languages": [
+          "English",
+          "Japanese"
+        ],
         "displayLanguageSelector": false
       }
     }

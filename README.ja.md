@@ -64,9 +64,12 @@ expect(win.target("ocr:report.txt")).to_appear(5000);  // 結果を検証
 ### インストーラーを使う
 
 [Releases](https://github.com/ooISHoo/Mekiki/releases) から `Mekiki-<version>-windows-x64-setup.exe`
-（NSIS）または `.msi` を取得して実行します。IDE と MCP サーバ `mekiki-mcp.exe`、
-MCP の起動ガイドとリファレンス、`AGENTS.md`、サンプルスクリプトが入ります。
-コマンドライン版 `mekiki.exe` はインストーラーに含まれないので、ソースからビルドしてください。
+（NSIS）または `.msi` を取得して実行します。IDE と MCP サーバ `mekiki-mcp.exe` に加え、
+利用者向けドキュメント一式（スクリプトガイド、IDE 操作ガイド、Rhai API リファレンス、
+MCP の起動ガイドとリファレンス、`AGENTS.md`、ライセンス情報）とサンプルスクリプトが
+インストール先の `docs/`、`api/`、`examples/` に入ります。
+コマンドライン版 `mekiki.exe` も同じフォルダに入ります。インストーラーは PATH を変更しないので、
+コマンドラインから使う場合はインストール先フォルダをご自身で PATH に追加してください。
 
 インストーラーは自動起動・サービス登録・AI クライアントへの登録を**行いません**。
 

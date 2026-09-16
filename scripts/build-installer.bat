@@ -54,6 +54,7 @@ if /I "%TARGET_TRIPLE%"=="x86_64-pc-windows-msvc" (
 
 set "SIDECAR_DIR=ide\src-tauri\binaries"
 set "SIDECAR=%SIDECAR_DIR%\mekiki-mcp-%TARGET_TRIPLE%.exe"
+set "SIDECAR_CLI=%SIDECAR_DIR%\mekiki-%TARGET_TRIPLE%.exe"
 set "OUTPUT_DIR=dist\installer\v%VERSION%"
 
 echo.
@@ -75,12 +76,16 @@ if /I not "%MEKIKI_SKIP_TESTS%"=="1" (
     echo MEKIKI_SKIP_TESTS=1: dependency install and tests are skipped.
 )
 
-"%CARGO_EXE%" build --release -p mekiki-mcp
+"%CARGO_EXE%" build --release -p mekiki-mcp -p mekiki-scripting --bin mekiki-mcp --bin mekiki
 if errorlevel 1 goto cleanup
 
+rem Both extra binaries travel as Tauri sidecars and land next to mekiki-ide.exe.
+rem The installer does not touch PATH; users add the install directory themselves.
 if not exist "%SIDECAR_DIR%" mkdir "%SIDECAR_DIR%"
 if errorlevel 1 goto cleanup
 copy /Y "target\release\mekiki-mcp.exe" "%SIDECAR%" >nul
+if errorlevel 1 goto cleanup
+copy /Y "target\release\mekiki.exe" "%SIDECAR_CLI%" >nul
 if errorlevel 1 goto cleanup
 
 pushd ide >nul
@@ -140,5 +145,6 @@ exit /b 0
 
 :cleanup
 if defined SIDECAR if exist "%SIDECAR%" del /Q "%SIDECAR%" >nul 2>&1
+if defined SIDECAR_CLI if exist "%SIDECAR_CLI%" del /Q "%SIDECAR_CLI%" >nul 2>&1
 popd >nul
 exit /b %EXIT_CODE%

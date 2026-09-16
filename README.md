@@ -64,9 +64,12 @@ See the [script guide](docs/script-guide.md) for how to write scripts and the
 ### Using the installer
 
 Download `Mekiki-<version>-windows-x64-setup.exe` (NSIS) or the `.msi` from
-[Releases](https://github.com/ooISHoo/Mekiki/releases) and run it. It installs the IDE, the MCP server
-`mekiki-mcp.exe`, the MCP startup guide and reference, `AGENTS.md`, and the sample scripts.
-The command-line `mekiki.exe` is not included in the installer; build it from source.
+[Releases](https://github.com/ooISHoo/Mekiki/releases) and run it. It installs the IDE and the MCP server
+`mekiki-mcp.exe`, together with the user documentation (script guide, IDE user guide, Rhai API reference,
+MCP startup guide and reference, `AGENTS.md`, license information) and the sample scripts under
+`docs/`, `api/`, and `examples/` in the installation directory.
+The command-line `mekiki.exe` is installed into the same folder. The installer does not modify PATH;
+to use it from a shell, add the installation directory to PATH yourself.
 
 The installer does **not** add an autostart entry, register a service, or register the server with any AI client.
 
